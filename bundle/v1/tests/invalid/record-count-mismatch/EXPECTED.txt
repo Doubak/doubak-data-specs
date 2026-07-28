@@ -1,0 +1,3 @@
+应报错：段的 record_count 与指向该段的 index 行数不符。
+常见成因是把段首的 warcinfo 也算进了 record_count——它不是一次捕获，
+不进 index，也不该计入。两个数对不上意味着段与索引已经失去对应关系。

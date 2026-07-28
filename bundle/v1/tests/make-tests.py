@@ -240,6 +240,19 @@ def case_empty_payload_ok() -> None:
     save_index(d, lines)
 
 
+def case_record_count_mismatch() -> None:
+    d = fresh(
+        "invalid",
+        "record-count-mismatch",
+        "应报错：段的 record_count 与指向该段的 index 行数不符。\n"
+        "常见成因是把段首的 warcinfo 也算进了 record_count——它不是一次捕获，\n"
+        "不进 index，也不该计入。两个数对不上意味着段与索引已经失去对应关系。",
+    )
+    m = load_manifest(d)
+    m["segments"][0]["record_count"] = 3  # 实际 index 里只有 2 行
+    save_manifest(d, m)
+
+
 def case_bad_enumeration() -> None:
     d = fresh(
         "invalid",
@@ -272,6 +285,7 @@ def main() -> None:
     case_missing_checkpoint()
     case_bad_enumeration()
     case_empty_payload_ok()
+    case_record_count_mismatch()
     print("用例已生成。")
 
 

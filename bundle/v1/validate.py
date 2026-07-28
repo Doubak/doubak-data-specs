@@ -15,6 +15,7 @@
 """
 
 import argparse
+import collections
 import gzip
 import hashlib
 import json
@@ -207,6 +208,21 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
                     rid = e.get("warc_record_id", "")
                     if rid and f"<{rid}>".encode() not in raw:
                         rep.error(f"{where}: WARC 记录中找不到 warc_record_id {rid}")
+
+    # 每段的 record_count 必须等于指向它的 index 行数。
+    # warcinfo 不是捕获，不进 index，也不计入 record_count。
+    per_segment = collections.Counter(
+        e.get("segment") for _, e in entries if e.get("segment")
+    )
+    for seg in manifest.get("segments", []):
+        name = seg.get("filename", "")
+        declared = seg.get("record_count")
+        actual = per_segment.get(name, 0)
+        if declared is not None and declared != actual:
+            rep.error(
+                f"{name}: record_count 为 {declared}，但 index 中指向本段的行数为 {actual}。"
+                f"（record_count 不含段首的 warcinfo）"
+            )
 
     # 只在有重复时报错；空洞仅提示。
     for bid, seqs in seq_by_bundle.items():

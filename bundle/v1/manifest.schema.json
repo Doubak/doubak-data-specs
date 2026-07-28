@@ -80,7 +80,11 @@
           "filename": { "$ref": "common.schema.json#/$defs/segment_filename" },
           "bytes":    { "type": "integer", "minimum": 0 },
           "sha256":   { "$ref": "common.schema.json#/$defs/sha256" },
-          "record_count": { "type": "integer", "minimum": 0 },
+          "record_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "本段中【捕获记录】的条数，**不含**段首的 warcinfo 记录。\n\nwarcinfo 描述的是「这个文件是什么」，不是一次捕获，因此不进 index.ndjson。把它排除在计数之外，record_count 就恰好等于 segment 指向本段的 index 行数，从而可以被交叉校验——这正是校验器强制的不变量。"
+          },
           "first_capture_id": { "$ref": "common.schema.json#/$defs/capture_id" },
           "last_capture_id":  { "$ref": "common.schema.json#/$defs/capture_id" }
         },
