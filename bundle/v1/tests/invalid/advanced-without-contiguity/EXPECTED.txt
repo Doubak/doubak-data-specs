@@ -1,0 +1,2 @@
+应报错：crawl_state.advanced=true 但 contiguous=false。
+水位线只能在连续走完时推进，否则下次抓取会从一个假的下界开始，中间那段永远补不回来，且事后无从发现。

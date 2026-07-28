@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""生成 tests/valid 与 tests/invalid 下的用例。
+
+每个反例都是在最小合法 bundle 上做一处、且只做一处破坏，并配一句
+「应该报什么错」。反例套件是让规范从「一篇文档」变成「一件真东西」的关键：
+没有它，没人知道校验器到底拦不拦得住。
+
+    python3 make-tests.py
+"""
+
+import hashlib
+import json
+import pathlib
+import shutil
+
+HERE = pathlib.Path(__file__).parent
+EXAMPLE = HERE.parent / "examples" / "minimal-bundle"
+BUNDLE_ID = "20260728T101500Z-a3f9c1"
+SEGMENT = f"data-{BUNDLE_ID}-00001.warc.gz"
+INDEX = f"index-{BUNDLE_ID}.ndjson"
+
+
+def fresh(kind: str, name: str, why: str) -> pathlib.Path:
+    dst = HERE / kind / name
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.copytree(EXAMPLE, dst)
+    (dst / "EXPECTED.txt").write_text(why + "\n", encoding="utf-8")
+    return dst
+
+
+def load_manifest(d: pathlib.Path) -> dict:
+    return json.loads((d / "manifest.json").read_text(encoding="utf-8"))
+
+
+def save_manifest(d: pathlib.Path, m: dict) -> None:
+    (d / "manifest.json").write_text(
+        json.dumps(m, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def index_lines(d: pathlib.Path) -> list:
+    return [
+        json.loads(l)
+        for l in (d / INDEX).read_text(encoding="utf-8").splitlines()
+        if l.strip()
+    ]
+
+
+def save_index(d: pathlib.Path, lines: list, fix_hash: bool = True) -> None:
+    text = "".join(json.dumps(l, ensure_ascii=False) + "\n" for l in lines)
+    (d / INDEX).write_text(text, encoding="utf-8")
+    if fix_hash:
+        m = load_manifest(d)
+        m["index"]["sha256"] = hashlib.sha256(text.encode()).hexdigest()
+        m["index"]["line_count"] = len(lines)
+        save_manifest(d, m)
+
+
+# --- valid ----------------------------------------------------------------
+
+def case_valid_with_holes() -> None:
+    """序号空洞必须【合法】：序号先分配后写入，崩溃会留洞而非留重复。
+    校验器若把空洞当错误，会在真实崩溃恢复后误报。"""
+    d = fresh("valid", "capture-id-holes", "应通过：capture_id 序号空洞是合法的（分配后崩溃）。")
+    lines = index_lines(d)
+    old_id = lines[1]["capture_id"]
+    new_id = f"{BUNDLE_ID}#000005"  # 跳过 2、3、4
+    lines[1]["capture_id"] = new_id
+    save_index(d, lines)
+    # 指向该捕获的引用必须一并更新，否则会触发引用完整性检查——
+    # 这正是 claimed_source 该起的作用。
+    m = load_manifest(d)
+    for cov in m["coverage"]:
+        if cov.get("claimed_source") == old_id:
+            cov["claimed_source"] = new_id
+    save_manifest(d, m)
+
+
+# --- invalid --------------------------------------------------------------
+
+def case_advanced_without_contiguity() -> None:
+    d = fresh(
+        "invalid",
+        "advanced-without-contiguity",
+        "应报错：crawl_state.advanced=true 但 contiguous=false。\n"
+        "水位线只能在连续走完时推进，否则下次抓取会从一个假的下界开始，"
+        "中间那段永远补不回来，且事后无从发现。",
+    )
+    m = load_manifest(d)
+    m["crawl_state"][0]["contiguous"] = False
+    save_manifest(d, m)
+
+
+def case_advanced_with_gaps() -> None:
+    d = fresh(
+        "invalid",
+        "advanced-with-gaps",
+        "应报错：crawl_state.advanced=true 但 gaps 非空。同上——有缺口就不许推进水位线。",
+    )
+    m = load_manifest(d)
+    m["crawl_state"][0]["gaps"] = [
+        {"reason": "fetch_failed", "detail": "第 3 页连续失败"}
+    ]
+    save_manifest(d, m)
+
+
+def case_dangling_claimed_source() -> None:
+    d = fresh(
+        "invalid",
+        "dangling-claimed-source",
+        "应报错：coverage.claimed_source 指向不存在的 capture_id。\n"
+        "声明数量必须能追溯回读出它的那张页面，否则它只是一个无从核实的数字。",
+    )
+    m = load_manifest(d)
+    m["coverage"][0]["claimed_source"] = f"{BUNDLE_ID}#999999"
+    save_manifest(d, m)
+
+
+def case_claimed_without_source() -> None:
+    d = fresh(
+        "invalid",
+        "claimed-without-source",
+        "应报错：claimed_count 非 null 但 claimed_source 为 null。",
+    )
+    m = load_manifest(d)
+    m["coverage"][0]["claimed_source"] = None
+    save_manifest(d, m)
+
+
+def case_forbidden_completeness_field() -> None:
+    d = fresh(
+        "invalid",
+        "coverage-completeness-field",
+        "应报错：coverage 中出现 completeness/reconciled。\n"
+        "豆瓣有多套审查/屏蔽机制，其计数有时统计于审查之前、有时之后，"
+        "因此声明数量在任何情况下都不能作为完整性判据。规范刻意不提供这些字段——"
+        "不存在的字段无法被误用。完整性证据在 crawl_state 里。",
+    )
+    m = load_manifest(d)
+    m["coverage"][0]["completeness"] = "complete"
+    save_manifest(d, m)
+
+
+def case_segment_hash_mismatch() -> None:
+    d = fresh(
+        "invalid",
+        "segment-hash-mismatch",
+        "应报错：段文件 sha256 与 manifest 不符（档案已损坏或被篡改）。",
+    )
+    (d / SEGMENT).write_bytes((d / SEGMENT).read_bytes() + b"\x00")
+
+
+def case_line_count_mismatch() -> None:
+    d = fresh(
+        "invalid",
+        "index-line-count-mismatch",
+        "应报错：index 实际行数与 manifest.index.line_count 不符（导出被截断）。",
+    )
+    m = load_manifest(d)
+    m["index"]["line_count"] = 99
+    save_manifest(d, m)
+
+
+def case_duplicate_capture_id() -> None:
+    d = fresh(
+        "invalid",
+        "duplicate-capture-id",
+        "应报错：capture_id 重复。空洞合法，重复非法——重复意味着索引指向不明。",
+    )
+    lines = index_lines(d)
+    lines[1]["capture_id"] = lines[0]["capture_id"]
+    save_index(d, lines)
+
+
+def case_naive_timestamp() -> None:
+    d = fresh(
+        "invalid",
+        "naive-timestamp",
+        "应报错：observed_at 缺少时区偏移。\n"
+        "豆瓣页面给的是不带时区的裸时间，若在此处也丢掉偏移量，"
+        "海外时区的用户会得到整体偏移数小时的水位线。",
+    )
+    lines = index_lines(d)
+    lines[0]["observed_at"] = "2026-07-28 10:15:03"
+    save_index(d, lines)
+
+
+def case_missing_intent() -> None:
+    d = fresh(
+        "invalid",
+        "missing-intent",
+        "应报错：index 行缺少 intent。\n"
+        "一份标记列表的第 7 页，事后无法区分它当初是「看过」还是「想看」的第 7 页。"
+        "此字段丢失不可恢复。",
+    )
+    lines = index_lines(d)
+    del lines[0]["intent"]
+    save_index(d, lines)
+
+
+def case_bad_offset() -> None:
+    d = fresh(
+        "invalid",
+        "bad-offset",
+        "应报错：offset 处不是合法的 gzip member。索引与段文件已失去对应关系。",
+    )
+    lines = index_lines(d)
+    lines[0]["offset"] = lines[0]["offset"] + 3
+    save_index(d, lines)
+
+
+def case_missing_checkpoint() -> None:
+    d = fresh(
+        "invalid",
+        "missing-checkpoint",
+        "应报错：status=in_progress 但没有 checkpoint.json，这份半成品无法续抓。",
+    )
+    m = load_manifest(d)
+    m["status"] = "in_progress"
+    m["completed_at"] = None
+    save_manifest(d, m)
+
+
+def case_empty_payload_ok() -> None:
+    d = fresh(
+        "invalid",
+        "empty-payload-marked-ok",
+        "应报错：载荷零长度却记为 verdict=ok（SPEC §6.5.2）。\n"
+        "真实旧档案里出现过 7 个零字节文件，与一次会话失效同批产生，"
+        "文件名齐全地躺在目录里，磁盘上没有任何东西表明抓取失败过——"
+        "下游只会看到「文件在」。空响应必须如实判定。",
+    )
+    lines = index_lines(d)
+    # 空字符串的 sha256
+    lines[0]["content_sha256"] = (
+        "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    )
+    lines[0]["verdict"] = "ok"
+    save_index(d, lines)
+
+
+def case_bad_enumeration() -> None:
+    d = fresh(
+        "invalid",
+        "bad-enumeration",
+        "应报错：crawl_state.enumeration 取值非法。\n"
+        "下游据此判断有无资格推断删除；取值不明时，猜错的方向是静默地把没删的当成删了。",
+    )
+    m = load_manifest(d)
+    m["crawl_state"][0]["enumeration"] = "maybe"
+    save_manifest(d, m)
+
+
+def main() -> None:
+    if not EXAMPLE.exists():
+        raise SystemExit("请先运行 examples/make-minimal-bundle.py")
+    for kind in ("valid", "invalid"):
+        (HERE / kind).mkdir(parents=True, exist_ok=True)
+    case_valid_with_holes()
+    case_advanced_without_contiguity()
+    case_advanced_with_gaps()
+    case_dangling_claimed_source()
+    case_claimed_without_source()
+    case_forbidden_completeness_field()
+    case_segment_hash_mismatch()
+    case_line_count_mismatch()
+    case_duplicate_capture_id()
+    case_naive_timestamp()
+    case_missing_intent()
+    case_bad_offset()
+    case_missing_checkpoint()
+    case_bad_enumeration()
+    case_empty_payload_ok()
+    print("用例已生成。")
+
+
+if __name__ == "__main__":
+    main()

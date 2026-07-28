@@ -1,0 +1,1 @@
+应报错：status=in_progress 但没有 checkpoint.json，这份半成品无法续抓。

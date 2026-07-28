@@ -1,0 +1,1 @@
+应报错：index 实际行数与 manifest.index.line_count 不符（导出被截断）。

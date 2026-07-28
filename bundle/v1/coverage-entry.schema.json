@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/bundle/v1/coverage-entry.schema.json",
+  "title": "doubak bundle v1 — coverage 条目",
+
+  "description": "记录抓取当时页面自己声称的数量，与实际抓到的数量。每条路线一份，存放于 manifest.json 的 coverage 数组。\n\n【必须先读懂这一段，否则会用错】\ncoverage 是**观测记录，不是完整性证明**。豆瓣存在多套审查/屏蔽机制，其计数有时统计于审查之前、有时统计于审查之后，因此 claimed_count 在任何情况下都不可作为「这份档案是否完整」的判据。\n\n实测证据（真实档案，2022-12 至 2024-08，同一账号）：同一次抓取中，电影/看过 声称 1157、实抓 1157，分毫不差；游戏/玩过 声称 293、实抓 288，且缺口不在末页而在列表中段（第 7、14、17 页各只渲染 14、14、13 条，槽位为 15）。该偏差可复现且随时间增长（−3 → −5）。结论：无法在事先不知道答案的情况下判断哪个分类的计数可信。\n\n本 schema 因此刻意**不提供** completeness、reconciled 之类的字段——不存在的字段无法被误用。完整性的证据来自 crawl-state-entry 中的 enumeration / contiguous / gaps，即抓取过程本身的结构化证明。\n\n那为什么还要记？因为它事后不可恢复，且本身具有取证价值：claimed_count 大于 captured_count 可能意味着豆瓣的计数器知道一些它不肯展示给你的条目。这个差值是**线索**，不是判决。",
+
+  "type": "object",
+
+  "properties": {
+    "route_key": { "$ref": "common.schema.json#/$defs/route_key" },
+    "intent":    { "$ref": "common.schema.json#/$defs/intent" },
+
+    "claimed_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "页面声称的数量。取不到时必须为 null。null 与 0 是严格不同的两件事：null = 不知道，0 = 确实没有。不可信，理由见本 schema 顶部说明。"
+    },
+    "claimed_raw": {
+      "type": ["string", "null"],
+      "examples": ["看过 1234 部电影"],
+      "description": "读出该数字的原始文案，永远原样保留。将来若发现数字解析有误，可据此重算。"
+    },
+    "claimed_source": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/capture_id" },
+        { "type": "null" }
+      ],
+      "description": "读到该数字的那条捕获。这使「声明页本身也要入 WARC」成为机器可校验的要求：校验器可顺此指针回到 WARC 中的那张页面。没有它，claimed_count 只是一个无从追溯的数字。claimed_count 非 null 时本字段必须非 null。"
+    },
+    "claimed_observed_at": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/timestamp" },
+        { "type": "null" }
+      ]
+    },
+
+    "captured_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "本次实际抓到并判定为 ok 的条目数。"
+    },
+    "delta": {
+      "type": ["integer", "null"],
+      "description": "captured_count - claimed_count。claimed_count 为 null 时本字段为 null。命名刻意中性：它是一个差值，不是一个错误。"
+    }
+  },
+
+  "required": ["route_key", "intent", "claimed_count", "captured_count"],
+
+  "allOf": [
+    {
+      "$comment": "claimed_count 非 null 时，必须能追溯到读出它的那条捕获。",
+      "if": {
+        "properties": { "claimed_count": { "type": "integer" } },
+        "required": ["claimed_count"]
+      },
+      "then": {
+        "properties": { "claimed_source": { "type": "string" } },
+        "required": ["claimed_source"]
+      }
+    }
+  ],
+
+  "additionalProperties": true
+}

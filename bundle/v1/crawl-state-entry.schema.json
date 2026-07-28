@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/bundle/v1/crawl-state-entry.schema.json",
+  "title": "doubak bundle v1 — 抓取存档信息条目",
+
+  "description": "跨次抓取的续抓依据，每条路线一份，存放于 manifest.json 的 crawl_state 数组。下一次抓取读取它来确定本次的下界。\n\n由于 coverage 中的声明数量不可信（见 coverage-entry.schema.json），**本对象是判断档案完整性的唯一依据**：完整性来自抓取过程自身的结构化证明（连续走完、无缺口），而不是来自与豆瓣计数器的比对。",
+
+  "type": "object",
+
+  "properties": {
+    "route_key": { "$ref": "common.schema.json#/$defs/route_key" },
+    "intent":    { "$ref": "common.schema.json#/$defs/intent" },
+
+    "high_water_time": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/timestamp" },
+        { "type": "null" }
+      ],
+      "description": "本路线已确认覆盖到的最新时间，即本次抓到的最新一条的时间。成为下次抓取的下界。存的是时间【值】而非条目 ID——任何条目都可能被删除，ID 锚点会凭空消失。"
+    },
+    "high_water_raw": {
+      "type": ["string", "null"],
+      "description": "该时间在页面上的原样字符串（如 title=\"2026-07-26 12:34:00\"，不带时区）。永远原样保留。"
+    },
+    "high_water_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "处于 high_water_time 这一时刻的条目 ID 集合。同一秒内有多条时，靠它在续抓时去重。"
+    },
+    "floor_time": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/timestamp" },
+        { "type": "null" }
+      ],
+      "description": "本次抓取的下界，通常取自上次的 high_water_time。null 表示本次一直抓到最早（首次全量）。与下界比较时必须使用闭区间（<=）：宁可重复，不可遗漏。"
+    },
+
+    "enumeration": {
+      "enum": ["full", "bounded"],
+      "description": "本次对该路线的枚举方式。\n\nfull = 从头到尾完整枚举了整份列表。此时「上次有、这次没有」是有意义的信号，下游【可以】据此推断删除。\n\nbounded = 只走到 floor_time 就停了，下界以下根本没有看。此时缺失【无法】与「没抓到」区分，下游【不得】推断删除。\n\n把它显式写进数据而不是留给下游去猜：猜错的方向是静默地把没删的当成删了，且事后无从发现。"
+    },
+    "contiguous": {
+      "type": "boolean",
+      "description": "连续性证明是否成立：从最新一条到 floor_time 之间是否形成了一条无断裂的链（相邻页之间存在重叠证据）。"
+    },
+    "gaps": {
+      "type": "array",
+      "items": { "$ref": "common.schema.json#/$defs/gap" },
+      "description": "已知缺口。必须显式记录，不得静默。"
+    },
+
+    "advanced": {
+      "type": "boolean",
+      "description": "本次抓取是否推进了水位线。\n\n【核心不变量】只有当该路线从最新一条连续无缺口地走到了 floor_time 时，才允许为 true。中途暂停、被风控打断、用户放弃，一律为 false——已抓到的数据照样留在 WARC 里，但下次仍从旧下界重走。重复是免费的，空洞是永久且不可检测的。"
+    },
+
+    "completed_at": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/timestamp" },
+        { "type": "null" }
+      ]
+    },
+    "bundle_id": { "$ref": "common.schema.json#/$defs/bundle_id" }
+  },
+
+  "required": [
+    "route_key",
+    "intent",
+    "high_water_time",
+    "floor_time",
+    "enumeration",
+    "contiguous",
+    "gaps",
+    "advanced",
+    "bundle_id"
+  ],
+
+  "allOf": [
+    {
+      "$comment": "核心不变量：advanced 为真，则必须连续且无缺口。",
+      "if": {
+        "properties": { "advanced": { "const": true } },
+        "required": ["advanced"]
+      },
+      "then": {
+        "properties": {
+          "contiguous": { "const": true },
+          "gaps": { "maxItems": 0 },
+          "high_water_time": { "type": "string" }
+        },
+        "required": ["contiguous", "gaps", "high_water_time"]
+      }
+    }
+  ],
+
+  "additionalProperties": true
+}

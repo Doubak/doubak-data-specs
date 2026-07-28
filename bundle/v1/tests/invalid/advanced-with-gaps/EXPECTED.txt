@@ -1,0 +1,1 @@
+应报错：crawl_state.advanced=true 但 gaps 非空。同上——有缺口就不许推进水位线。

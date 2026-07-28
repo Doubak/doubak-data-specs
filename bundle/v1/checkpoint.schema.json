@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/bundle/v1/checkpoint.schema.json",
+  "title": "doubak bundle v1 — 抓取存档点 checkpoint.json",
+
+  "description": "断点续抓所需的状态。仅当 manifest.status 不为 complete 时存在。\n\n抓取期间活在生产者的本地数据库里；导出时一并写入 bundle 目录——这样一份导出的半成品档案也能被拿到另一台机器上继续抓。",
+
+  "type": "object",
+
+  "properties": {
+    "spec_version": { "$ref": "common.schema.json#/$defs/spec_version" },
+    "bundle_id":    { "$ref": "common.schema.json#/$defs/bundle_id" },
+    "paused_at":    { "$ref": "common.schema.json#/$defs/timestamp" },
+
+    "pause_reason": {
+      "enum": [
+        "session_expired",
+        "challenge",
+        "blocked",
+        "user_paused",
+        "quota",
+        "crash"
+      ],
+      "description": "session_expired 与 blocked/challenge 的处置完全不同：会话过期是【停止条件】，不可重试；challenge 是【暂停】，需人工在正常标签页中解决后，先以廉价探测确认恢复，再降速续抓。在软封锁上重试正是把限流升级成封号的标准路径。"
+    },
+
+    "last_capture_id": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/capture_id" },
+        { "type": "null" }
+      ],
+      "description": "最后一条成功写入的记录。恢复时据此核对 index 与段文件尾部是否一致（写入顺序为 WARC 记录 → index 行 → 状态，故撕裂的尾巴总是可检测且可截断修复的）。"
+    },
+
+    "routes": {
+      "type": "array",
+      "description": "每条路线的当前游标。",
+      "items": {
+        "type": "object",
+        "properties": {
+          "route_key": { "$ref": "common.schema.json#/$defs/route_key" },
+          "state": {
+            "enum": ["pending", "in_progress", "done", "failed", "awaiting_human"]
+          },
+          "cursor": {
+            "oneOf": [
+              { "$ref": "common.schema.json#/$defs/cursor" },
+              { "type": "null" }
+            ]
+          },
+          "items_seen": { "type": "integer", "minimum": 0 },
+          "stall_counter": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "连续无进展的页数。终止条件是「连续 N 页无进展」，而不是「本页无新条目」：整页重复是正常现象，而某些分页会把越界页码钳到最后一页，只看新条目会导致死循环。"
+          }
+        },
+        "required": ["route_key", "state"],
+        "additionalProperties": true
+      }
+    },
+
+    "frontier": {
+      "type": "array",
+      "description": "待抓与未完成的队列条目。失败条目必须保留在此并阻塞该路线推进——跳过失败页会破坏「这条线以上全部已抓」这个不变量。",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url":       { "$ref": "common.schema.json#/$defs/url" },
+          "intent":    { "$ref": "common.schema.json#/$defs/intent" },
+          "route_key": { "$ref": "common.schema.json#/$defs/route_key" },
+          "state": {
+            "enum": ["pending", "in_flight", "failed", "awaiting_human"]
+          },
+          "attempts": { "type": "integer", "minimum": 0 },
+          "enqueued_by": {
+            "oneOf": [
+              { "$ref": "common.schema.json#/$defs/capture_id" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "required": ["url", "intent", "route_key", "state"],
+        "additionalProperties": true
+      }
+    },
+
+    "rate_state": {
+      "type": "object",
+      "description": "节奏状态。必须进 checkpoint：软封锁之后降了速，恢复抓取时不能把这件事忘掉——忘掉就等于一恢复又按原速撞上去。",
+      "properties": {
+        "interval_ms": { "type": "integer", "minimum": 0 },
+        "backoff_level": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "退避层级。设计上只增不减：降速后不自动恢复原速。"
+        }
+      },
+      "required": ["interval_ms"],
+      "additionalProperties": true
+    }
+  },
+
+  "required": [
+    "spec_version",
+    "bundle_id",
+    "paused_at",
+    "pause_reason",
+    "routes",
+    "frontier"
+  ],
+
+  "additionalProperties": true
+}

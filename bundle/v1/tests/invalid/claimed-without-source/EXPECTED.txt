@@ -1,0 +1,1 @@
+应报错：claimed_count 非 null 但 claimed_source 为 null。

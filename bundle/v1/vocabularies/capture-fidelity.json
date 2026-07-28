@@ -1,0 +1,24 @@
+{
+  "vocabulary": "capture_fidelity",
+  "spec_version": "bundle/1.0",
+  "open": false,
+
+  "description": "如实说明一条记录的成色。\n\n本规范的原则是「原始字节、原始响应头、不做清洗」，但在浏览器扩展中，fetch() 做不到这一点：它交给调用方的响应体已经解除了 Content-Encoding，其 Headers 对象也是过滤过的——Set-Cookie 不可见，响应头的原始顺序与大小写均已丢失。\n\n这不是可以含糊过去的细节。十年后有人拿这份档案做取证时，本字段就是他判断能信到什么程度的依据。**做不到却宣称做到了，比做不到本身糟糕得多。**",
+
+  "values": {
+    "raw": {
+      "meaning": "线上原始字节与原始响应头，逐字节保真。",
+      "availability": "浏览器扩展目前无可行途径。唯一能拿到的是调试协议，但它会在浏览器顶部常驻「正在被调试」横幅，对一场持续数小时的抓取而言不可接受。此取值为将来预留。"
+    },
+    "decoded_body+observed_headers": {
+      "meaning": "响应体来自 fetch()（Content-Encoding 已被解除），响应头由只读的请求观察接口补全，为真实响应头。",
+      "availability": "推荐取值。"
+    },
+    "decoded_body+filtered_headers": {
+      "meaning": "响应体来自 fetch()，响应头亦为 fetch() 提供的过滤版本。",
+      "availability": "退化取值：当响应头观察不可用时使用。"
+    }
+  },
+
+  "precedent": "webrecorder 自家的 ArchiveWeb.page 面对同样的限制做了同样的取舍。差别在于本规范把这件事写进了数据本身。"
+}

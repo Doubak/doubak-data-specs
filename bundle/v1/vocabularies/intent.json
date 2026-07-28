@@ -1,0 +1,114 @@
+{
+  "vocabulary": "intent",
+  "spec_version": "bundle/1.0",
+  "open": true,
+  "grammar": "<family>(.<component>)*  —— 点分小写，[a-z][a-z0-9_]*",
+
+  "description": "抓取某个 URL 的原因。开放词表：新增取值不构成版本变更。生产者可扩展，读者遇到未知取值必须原样保留、不得丢弃、不得猜测。\n\n这是三个「丢了就永远补不回来」的字段之一：一份标记列表的第 7 页，事后无法区分它当初是「看过」还是「想看」的第 7 页。",
+
+  "note_on_reserved_fields": {
+    "question": "是否需要像 protobuf 那样为已知但暂不支持的分类预留字段号？",
+    "answer": "不需要，而且不应该。",
+    "why": "预留字段号是 protobuf 的线格式问题——tag 号一旦用过就不能重用，否则老解析器会误读新数据。JSON + 开放词表没有这个约束：新增一个分类就是多写一个字符串，老读者按规范原样保留即可，不会误读。\n\n本项目从 protobuf 改用 JSON Schema 正是为了摆脱这类约束（另一个原因是 MV3 禁 unsafe-eval，protobuf.js 的动态模式用不了）。在这里搞「预留」反而有害：它会让人以为这是个封闭集合，而它恰恰不是。\n\n需要做的是另一件事——把【已知存在但尚未抓取】的分类**记录下来**（见 known_unsupported），这样实现者知道还有什么在那儿，但不必为它们预先分配任何东西。记录 ≠ 预留。"
+  },
+
+  "three_axes": {
+    "description": "前代的 category.proto 把三个不同的轴混成了一个枚举。它们必须分开，否则「小组」和「电影」会被当成同类。",
+    "intent": "我们为什么抓这个 URL —— 描述【路线】。本文件定义。",
+    "medium": "被标记的作品是什么类型 —— 描述【作品】。见 components.medium。",
+    "broadcast_target_type": "一条广播指向什么 —— 其中很多根本不是作品（豆列、转发、讨论串）。见 components.broadcast_target_type。"
+  },
+
+  "values": {
+    "profile.overview":               "个人主页总览",
+    "profile.category_entry":         "某个分类的入口页，声明数量的来源（其后可接 medium，如 profile.category_entry.movie）",
+
+    "broadcast.timeline":             "广播列表页",
+    "broadcast.item":                 "单条广播详情（主要用于补全被截断的正文）",
+
+    "interest.list":                  "标记列表；其后接 medium 与 status，如 interest.list.movie.collect",
+    "interest.item":                  "作品条目详情页。属【目录数据】，写入 catalog-* 段，可整批丢弃",
+
+    "note.list":                      "日记列表",
+    "note.item":                      "单篇日记",
+
+    "review.list":                    "影评/书评等长评列表；其后可接 medium",
+    "review.item":                    "单篇长评",
+
+    "annotation.list":                "读书笔记列表",
+    "annotation.item":                "单条读书笔记",
+
+    "photo.album_list":               "相册列表",
+    "photo.album":                    "单个相册",
+    "photo.item":                     "单张照片页",
+
+    "doulist.list":                   "豆列列表",
+    "doulist.item":                   "单个豆列",
+
+    "redirect.shortlink":             "豆瓣自家的短链跳转（douc.cc）。必须跟随并把 3xx 响应本身也写进 WARC——只存短链等于在档案里留一个指向第三方跳转服务的死指针",
+
+    "asset.image.user_upload":        "用户自己上传的图片（相册、正文内嵌）——写入 assets-* 段",
+    "asset.image.catalog_thumbnail":  "列表页上的目录缩略图——写入 catalog-* 段",
+
+    "probe.canary":                   "廉价探测请求，用于在恢复抓取前确认风控状态",
+    "manual.user_requested":          "用户手动要求补抓的页面"
+  },
+
+  "components": {
+    "medium": {
+      "description": "被标记的作品类型。开放词表。尽量沿用 NeoDB 的枚举以便日后映射，但豆瓣有 NeoDB 没有的类型，直接加即可——这正是开放词表的意义。",
+      "neodb_aligned": ["book", "movie", "tv", "music", "game", "podcast", "performance"],
+      "douban_native": {
+        "drama": "舞台剧。映射到 NeoDB 的 performance",
+        "app": "移动应用。NeoDB 无对应类型，保持豆瓣原样"
+      },
+      "note": "豆瓣侧目前实际出现的是 movie / book / music / game / drama / app。"
+    },
+
+    "status": {
+      "description": "标记状态。取值来自豆瓣 URL 中的 action。",
+      "values": {
+        "collect": "已完成（看过 / 读过 / 听过 / 玩过）",
+        "wish":    "想要（想看 / 想读 / 想听 / 想玩）",
+        "do":      "进行中（在看 / 在读 / 在听 / 在玩）"
+      }
+    },
+
+    "broadcast_target_type": {
+      "description": "一条广播指向什么。取自 HTML 中 div.status-item 的 data-target-type 属性。开放词表——实测已经出现过前代词表里没有的值。",
+      "observed": {
+        "movie": "电影", "book": "书籍", "music": "音乐", "game": "游戏", "app": "应用",
+        "sns": "自己发的短文（可带图）",
+        "doulist": "豆列",
+        "ilmen": "「我喜欢」的东西（图 + 标题）",
+        "fav": "「我喜欢」的日记/帖子",
+        "olivia": "参与的讨论串",
+        "rec": "推荐的讨论串",
+        "board": "已废弃：参与电影投票活动",
+        "loc": "同城相关。【前代词表里没有这个值】，在真实档案中实测到 4 次",
+        "": "转发"
+      },
+      "reader_rule": "遇到未知取值必须原样保留并计数，不得丢弃。实测证明这个集合会变。"
+    }
+  },
+
+  "known_unsupported": {
+    "description": "豆瓣上确实存在、但 doubak 不抓的分类。记录在此是为了让实现者知道还有什么在那儿——这不是预留，不需要为它们分配任何东西。将来要支持，直接加 intent 取值即可。",
+
+    "out_of_scope": {
+      "group":    "小组。社区讨论，不是「你的数据」，且体量无边界",
+      "site":     "小站",
+      "activity": "同城活动",
+      "thing":    "豆品",
+      "social.following":  "关注的人",
+      "social.follower":   "被谁关注",
+      "social.blacklist":  "黑名单",
+      "broadcast.replies": "他人在你广播下的回应",
+      "doumail.*": "豆邮（私信）。见 why_doumail_is_out"
+    },
+
+    "why_doumail_is_out": "豆邮里混着大量【站方群发的系统通知】，噪音极大。\n\n这一点推翻了原本的判断。原先假定豆邮 ≈ 私人通信 ≈ 不可替代性最高，因此该排在很靠前；实际上其中相当一部分根本不是个人往来，而是可替代的系统广播。真正不可替代的那部分被淹没在噪音里，而把噪音一并存进档案，还要连带承担存储、隐私与发布路径的风险。\n\n若将来重启，要先解决的是「区分个人往来与站方群发」——在那之前抓下来的东西，价值配不上风险。",
+
+    "why_social_is_out": "社交周边一律不抓，理由是【边界画不住】。\n\n关注列表指向别的用户，那些用户又有自己的内容和关注列表；广播下的回应指向回应者，回应者又有自己的广播。任何一条社交边都是一个可以无限展开的入口，而档案必须是有界的。\n\n还有一条一致性理由：既然不抓广播下的他人回应，就没有道理去抓关注列表——两者都是「社交外围」。只抓其中一个是自相矛盾的。\n\n第三条是隐私：这些数据的主体不是本人，而是他人的身份与言论。对本项目的用户群而言，其中一部分内容涉及政治敏感，误入发布路径的伤害不可逆。\n\n实测补充：广播列表页只带回应的【容器与计数】，不带回应【内容】——`<div class=\"comments-items\"></div>` 是空的。所以现状是「没有顺手抓到」，不是「已经抓到了只是没标注」。要抓就得为每条广播额外发一次请求（实测账号有 2839 条广播）。\n\n若将来仍要抓回应，必须硬性限定：只抓自己内容下的回应、深度为 1、绝不跟随到回应者的主页。没有这个边界就不要开始。"
+  }
+}

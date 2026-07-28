@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/bundle/v1/common.schema.json",
+  "title": "doubak bundle v1 — 公共定义",
+  "description": "被本目录下其他 schema 引用的公共类型。本文件自身不描述任何文件。",
+
+  "$defs": {
+    "spec_version": {
+      "type": "string",
+      "const": "bundle/1.0",
+      "description": "格式版本。大版本变更意味着旧读者会误读数据；小版本变更只增加可选字段。"
+    },
+
+    "bundle_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}$",
+      "examples": ["20260728T101500Z-a3f9c1"],
+      "description": "UTC 紧凑时间戳 + 6 位小写十六进制随机数。前缀为时间戳，故可按字典序排序。"
+    },
+
+    "capture_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}#[0-9]{6}$",
+      "examples": ["20260728T101500Z-a3f9c1#000042"],
+      "description": "<bundle_id>#<6 位零填充序号>。序号在写入前分配，因此序列中允许存在空洞（分配后崩溃），但不允许重复。"
+    },
+
+    "segment_filename": {
+      "type": "string",
+      "pattern": "^(data|assets|catalog)-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}-[0-9]{5}\\.warc\\.gz$",
+      "examples": ["data-20260728T101500Z-a3f9c1-00001.warc.gz"],
+      "description": "段文件名内嵌 bundle_id，使得多次抓取的文件混放在同一目录时不会互相覆盖。\n\n前缀表示【留存等级】而非媒体类型：\n- data-*    用户范围的页面与 API 响应（广播、标记列表、自己的长文）。神圣，不可丢。\n- assets-*  用户上传的二进制资源（相册、正文内嵌图）。神圣，不可丢。\n- catalog-* 作品条目详情页与目录缩略图。属于缓存：源站还在就能重抓，因此可以整批丢弃而不损伤档案本身。\n\n这样分段是为了让「丢掉 catalog-* 就能省下绝大部分体积」成为一个纯粹的文件操作，不需要任何工具解析内容。"
+    },
+
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "小写十六进制 SHA-256。注意：WARC 记录内部沿用 WARC 惯例的 sha1/base32，此处仅用于本规范自身的文件完整性校验。"
+    },
+
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$",
+      "examples": ["2026-07-28T10:15:00+08:00"],
+      "description": "RFC 3339，必须带显式时区偏移。禁止无时区的裸时间。"
+    },
+
+    "raw_timestamp": {
+      "type": "string",
+      "examples": ["2026-07-26 12:34:00"],
+      "description": "来源页面上的原样时间字符串，通常不带时区。永远原样保留，解析结果另存于对应的 timestamp 字段。"
+    },
+
+    "route_key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$",
+      "examples": ["broadcast.timeline", "interest.movie.collect"],
+      "description": "路线标识。开放词表：新增路线只需新增取值，不构成版本变更。"
+    },
+
+    "intent": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$",
+      "examples": ["interest.list.movie.collect"],
+      "description": "抓取该 URL 的原因。开放词表，已知取值见 vocabularies/intent.json。列表第 7 页在事后无法区分「看过」还是「想看」，此字段是唯一的判据，丢失不可恢复。"
+    },
+
+    "verdict": {
+      "enum": ["ok", "blocked", "challenge", "login", "gone", "soft404"],
+      "description": "对响应可信度的判定，基于内容而非 HTTP 状态码（豆瓣以 HTTP 200 返回封锁页）。封闭词表：这是安全相关字段，取值拼写错误必须校验失败。读者遇到未知取值时必须当作不可信，不得当作 ok。"
+    },
+
+    "surface": {
+      "enum": ["html", "api"],
+      "description": "该捕获来自哪个抓取面。同一条内容可能在两个面上各被捕获一次；缺少此字段会导致下游把同一内容的两种表示误认为两次修订。"
+    },
+
+    "capture_fidelity": {
+      "enum": [
+        "raw",
+        "decoded_body+observed_headers",
+        "decoded_body+filtered_headers"
+      ],
+      "description": "本条记录的保真度。raw = 线上原始字节（浏览器扩展目前无可行途径，预留）；decoded_body = fetch() 已解除 Content-Encoding 的响应体；observed_headers = 由 chrome.webRequest 观察补全的真实响应头；filtered_headers = fetch() 提供的过滤版响应头（Set-Cookie 等不可见，头顺序与大小写已丢失）。"
+    },
+
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "请求时的原始 URL，逐字节原样保留，包含跟踪参数。捕获时不做任何归一化。"
+    },
+
+    "cursor": {
+      "type": "object",
+      "description": "取得该页所用的游标，用于复现。",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "examples": ["max_id", "start", "page"],
+          "description": "游标类型。max_id 为按值游标（免疫头部插入错位），start/page 为偏移量。"
+        },
+        "value": {
+          "type": ["string", "integer", "null"]
+        }
+      },
+      "required": ["kind", "value"],
+      "additionalProperties": false
+    },
+
+    "gap": {
+      "type": "object",
+      "description": "连续性证明中的一处已知缺口。缺口必须显式记录，不得静默。",
+      "properties": {
+        "from_time": { "$ref": "#/$defs/timestamp" },
+        "to_time": { "$ref": "#/$defs/timestamp" },
+        "reason": {
+          "type": "string",
+          "examples": ["fetch_failed", "blocked", "aborted", "unresolved"]
+        },
+        "detail": { "type": "string" }
+      },
+      "required": ["reason"],
+      "additionalProperties": false
+    }
+  }
+}

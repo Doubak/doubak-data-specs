@@ -1,0 +1,2 @@
+应报错：coverage.claimed_source 指向不存在的 capture_id。
+声明数量必须能追溯回读出它的那张页面，否则它只是一个无从核实的数字。
