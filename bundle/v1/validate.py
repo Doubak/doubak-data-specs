@@ -24,7 +24,7 @@ import sys
 
 HERE = pathlib.Path(__file__).parent
 
-CAPTURE_ID_RE = re.compile(r"^([0-9]{8}T[0-9]{6}Z-[0-9a-f]{6})#([0-9]{6})$")
+CAPTURE_ID_RE = re.compile(r"^([0-9]{8}T[0-9]{6}Z-[0-9a-f]{6})#([0-9]{6,})$")
 EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 TS_RE = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
