@@ -1,0 +1,40 @@
+name: validate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 装上 jsonschema 才会跑 schema 那一层。没有它，validate.py 只做结构性
+      # 检查——六份 .schema.json 就等于没人执行过。这是 CI 存在的首要理由。
+      - name: 安装 schema 校验依赖
+        run: pip install jsonschema referencing
+
+      - name: 跑全部用例（含 schema 层）
+        working-directory: bundle/v1
+        run: python3 validate.py --tests
+
+      # 例子与反例都是脚本生成的。重新生成一遍应当与提交的内容逐字节一致：
+      # 不一致说明生成器改了却没重新生成，提交的夹具已经过期。
+      - name: 确认提交的例子与用例没有过期
+        working-directory: bundle/v1
+        run: |
+          python3 examples/make-minimal-bundle.py
+          python3 tests/make-tests.py
+
+      - name: 检查是否有未提交的差异
+        run: |
+          if ! git diff --quiet; then
+            echo '::error::生成的例子/用例与提交的内容不一致，请重新生成后提交'
+            git diff --stat
+            exit 1
+          fi
