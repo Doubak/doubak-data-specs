@@ -4,16 +4,18 @@
   "title": "doubak bundle v1 — index.ndjson 单行",
   "description": "index-<bundle_id>.ndjson 的每一行是一个符合本 schema 的 JSON 对象，对应一次抓取。这是整个 bundle 中唯一存放 doubak 专有元数据的地方；WARC 本身保持原味，不加任何私有扩展头。",
   "type": "object",
-
   "properties": {
-    "capture_id":     { "$ref": "common.schema.json#/$defs/capture_id" },
+    "capture_id": {
+      "$ref": "common.schema.json#/$defs/capture_id"
+    },
     "warc_record_id": {
       "type": "string",
       "pattern": "^urn:uuid:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
       "description": "对应 WARC 记录的 WARC-Record-ID。采用 urn:uuid 形式以满足 WARC 对全局唯一的要求并兼容既有工具。"
     },
-
-    "segment": { "$ref": "common.schema.json#/$defs/segment_filename" },
+    "segment": {
+      "$ref": "common.schema.json#/$defs/segment_filename"
+    },
     "offset": {
       "type": "integer",
       "minimum": 0,
@@ -24,8 +26,9 @@
       "minimum": 1,
       "description": "该 gzip member 的压缩后字节长度。"
     },
-
-    "url": { "$ref": "common.schema.json#/$defs/url" },
+    "url": {
+      "$ref": "common.schema.json#/$defs/url"
+    },
     "url_key": {
       "type": "string",
       "format": "uri",
@@ -36,50 +39,77 @@
       "pattern": "^v[0-9]+$",
       "description": "生成 url_key 所用的剥离规则版本。将来发现新的跟踪参数时，可对存量重算 url_key，而 url 永远不动。"
     },
-
-    "intent":     { "$ref": "common.schema.json#/$defs/intent" },
-    "route_key":  { "$ref": "common.schema.json#/$defs/route_key" },
-    "surface":    { "$ref": "common.schema.json#/$defs/surface" },
-    "verdict":    { "$ref": "common.schema.json#/$defs/verdict" },
-    "capture_fidelity": { "$ref": "common.schema.json#/$defs/capture_fidelity" },
-
+    "final_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "跟随跳转之后的最终 URL。**仅在与 url 不同时出现**，相同则省略。\n\n为什么需要它：豆瓣的内容里存在自家的短链（douc.cc），只记下短链等于在档案里留一个指向第三方跳转服务的死指针——那个服务停掉，这条链接就永远解不开了。记下解析结果，整条链在档案内自洽。\n\n它不替代 url：url 是请求时的事实，final_url 是跟随的结果，两者并存。"
+    },
+    "intent": {
+      "$ref": "common.schema.json#/$defs/intent"
+    },
+    "route_key": {
+      "$ref": "common.schema.json#/$defs/route_key"
+    },
+    "surface": {
+      "$ref": "common.schema.json#/$defs/surface"
+    },
+    "verdict": {
+      "$ref": "common.schema.json#/$defs/verdict"
+    },
+    "capture_fidelity": {
+      "$ref": "common.schema.json#/$defs/capture_fidelity"
+    },
     "observed_at": {
-      "allOf": [{ "$ref": "common.schema.json#/$defs/timestamp" }],
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        }
+      ],
       "description": "爬虫看见这个响应的时间（客户端时钟）。与 occurred_at、recorded_at 是三件不同的事，永远不许合并。"
     },
-
     "http_status": {
       "type": "integer",
       "minimum": 100,
       "maximum": 599,
       "description": "HTTP 状态码。注意：豆瓣以 HTTP 200 返回封锁页，故绝不可用它判断可信度——那是 verdict 的职责。"
     },
-    "content_type": { "type": "string" },
+    "content_type": {
+      "type": "string"
+    },
     "content_sha256": {
-      "allOf": [{ "$ref": "common.schema.json#/$defs/sha256" }],
+      "allOf": [
+        {
+          "$ref": "common.schema.json#/$defs/sha256"
+        }
+      ],
       "description": "所存储载荷的 SHA-256。注意这是「所存储的」而非「线上的」——具体成色见 capture_fidelity。"
     },
-
     "parent_capture_id": {
       "oneOf": [
-        { "$ref": "common.schema.json#/$defs/capture_id" },
-        { "type": "null" }
+        {
+          "$ref": "common.schema.json#/$defs/capture_id"
+        },
+        {
+          "type": "null"
+        }
       ],
       "description": "把这个 URL 放进队列的那次捕获。有了这条链，整张抓取图可离线重建，连续性证明因而可被第三方独立验证，而不必信任生产者自己的结论。根节点为 null。"
     },
     "cursor": {
       "oneOf": [
-        { "$ref": "common.schema.json#/$defs/cursor" },
-        { "type": "null" }
+        {
+          "$ref": "common.schema.json#/$defs/cursor"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
-
     "note": {
       "type": "string",
       "description": "自由文本备注。不承载任何机器语义。"
     }
   },
-
   "required": [
     "capture_id",
     "warc_record_id",
@@ -94,7 +124,6 @@
     "capture_fidelity",
     "observed_at"
   ],
-
   "additionalProperties": true,
   "$comment": "additionalProperties 为 true 是刻意的：读者必须容忍未知字段，且在重写文件时不得丢弃它们。这是「同一大版本内只增不改」得以成立的前提。"
 }
