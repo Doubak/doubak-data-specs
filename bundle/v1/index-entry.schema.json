@@ -105,6 +105,38 @@
         }
       ]
     },
+    "item_count": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "description": "这一页上**渲染出来**的条目数。抓取时已经算过一次（判定要用它），所以顺手记下来——事后重算要把整条记录取出来解压再跑一遍选择器，而豆瓣改版之后那些选择器可能已经对不上了。\n\n`null` 表示这条路线没有条目概念（比如个人主页），**不是 0**。"
+    },
+    "item_time_range": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "oldest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "这一页上最旧条目的时间，原样保留豆瓣给出的形式。"
+        },
+        "newest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "这一页上最新条目的时间。"
+        }
+      },
+      "additionalProperties": false,
+      "description": "这一页覆盖的时间区间。**不是**抓取时间（那是 `observed_at`）。\n\n存它的理由有两个：一是让人能在不解压任何记录的前提下看出「第 7 页是哪段时间」，二是给下游一个不必重新解析就能排序与对账的依据。\n\n时间**原样保留**豆瓣页面上的形式，不做时区归一化——列表页不带时区，归一化就等于替它假定一个，而假定错了不可恢复。"
+    },
     "note": {
       "type": "string",
       "description": "自由文本备注。不承载任何机器语义。"
