@@ -4,72 +4,112 @@
   "title": "doubak bundle v1 — manifest.json",
   "description": "一个 bundle 的清单：这次抓取是什么、抓了谁、产出了哪些文件、走到了哪里。每个 bundle 目录根下恰有一份。",
   "type": "object",
-
   "properties": {
-    "spec_version": { "$ref": "common.schema.json#/$defs/spec_version" },
-    "bundle_id":    { "$ref": "common.schema.json#/$defs/bundle_id" },
+    "spec_version": {
+      "$ref": "common.schema.json#/$defs/spec_version"
+    },
+    "bundle_id": {
+      "$ref": "common.schema.json#/$defs/bundle_id"
+    },
     "previous_bundle_id": {
       "oneOf": [
-        { "$ref": "common.schema.json#/$defs/bundle_id" },
-        { "type": "null" }
+        {
+          "$ref": "common.schema.json#/$defs/bundle_id"
+        },
+        {
+          "type": "null"
+        }
       ],
       "description": "上一次抓取的 bundle。每次抓取都产出一个全新 bundle，绝不覆盖既有 bundle；此字段把它们串成一条链。null 表示首次抓取。"
     },
-
     "status": {
-      "enum": ["in_progress", "complete", "aborted"],
-      "description": "in_progress 或 aborted 时，checkpoint.json 必须存在。"
+      "enum": [
+        "in_progress",
+        "complete",
+        "aborted"
+      ],
+      "description": "in_progress 或 aborted 时，checkpoint.json 必须存在。\n\n**`complete` 的含义是「生产者刻意收尾了」，不是「全都抓到了」。** 完整性证据只在 `crawl_state` 里（连续性证明），`status` 不承担那个职责——把它读成完整性声明是错的。\n\n生产者【可以】在存在已知缺口的情况下写 `complete`（例如叶子条目反复抓不下来，而用户决定就这样收尾）。此时 `crawl_state[].gaps` **必须**如实记录每一处缺口，且该路线的 `advanced` **必须**为 false。"
     },
-
-    "created_at":   { "$ref": "common.schema.json#/$defs/timestamp" },
+    "created_at": {
+      "$ref": "common.schema.json#/$defs/timestamp"
+    },
     "completed_at": {
       "oneOf": [
-        { "$ref": "common.schema.json#/$defs/timestamp" },
-        { "type": "null" }
+        {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        {
+          "type": "null"
+        }
       ]
     },
-
     "producer": {
       "type": "object",
       "description": "产出这份 bundle 的软件。",
       "properties": {
-        "name":    { "type": "string", "examples": ["doubak-extension"] },
-        "version": { "type": "string", "examples": ["0.1.0"] },
+        "name": {
+          "type": "string",
+          "examples": [
+            "doubak-extension"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "examples": [
+            "0.1.0"
+          ]
+        },
         "user_agent": {
           "type": "string",
           "description": "抓取时浏览器的真实 User-Agent，原样记录。生产者不得伪造 UA：伪造出的 UA 与 TLS 指纹及其他请求头不一致，反而更易被风控识别。"
         },
-        "platform": { "type": "string", "examples": ["Chrome/141 Linux"] }
+        "platform": {
+          "type": "string",
+          "examples": [
+            "Chrome/141 Linux"
+          ]
+        }
       },
-      "required": ["name", "version"],
+      "required": [
+        "name",
+        "version"
+      ],
       "additionalProperties": true
     },
-
     "account": {
       "type": "object",
       "description": "这份 bundle 归属的豆瓣账号。一个 bundle 只能属于一个账号。",
       "properties": {
         "user_id": {
           "type": "string",
-          "examples": ["82160871"],
+          "examples": [
+            "82160871"
+          ],
           "description": "豆瓣数字用户 ID。稳定主键。"
         },
         "username": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "用户名/域名。会变，不可作主键。"
         },
-        "profile_url": { "$ref": "common.schema.json#/$defs/url" }
+        "profile_url": {
+          "$ref": "common.schema.json#/$defs/url"
+        }
       },
-      "required": ["user_id"],
+      "required": [
+        "user_id"
+      ],
       "additionalProperties": true
     },
-
     "timezone_assumption": {
       "type": "string",
-      "examples": ["Asia/Shanghai"],
+      "examples": [
+        "Asia/Shanghai"
+      ],
       "description": "解析页面上无时区裸时间（如 title=\"2026-07-26 12:34:00\"）时所假定的时区。这是【假定】而非事实：豆瓣不标注时区。记下它，将来假定被推翻时可对存量重新解析。海外时区的用户若缺此字段，水位线可能整体偏移数小时。"
     },
-
     "segments": {
       "type": "array",
       "minItems": 0,
@@ -77,22 +117,37 @@
       "items": {
         "type": "object",
         "properties": {
-          "filename": { "$ref": "common.schema.json#/$defs/segment_filename" },
-          "bytes":    { "type": "integer", "minimum": 0 },
-          "sha256":   { "$ref": "common.schema.json#/$defs/sha256" },
+          "filename": {
+            "$ref": "common.schema.json#/$defs/segment_filename"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "sha256": {
+            "$ref": "common.schema.json#/$defs/sha256"
+          },
           "record_count": {
             "type": "integer",
             "minimum": 0,
             "description": "本段中【捕获记录】的条数，**不含**段首的 warcinfo 记录。\n\nwarcinfo 描述的是「这个文件是什么」，不是一次捕获，因此不进 index.ndjson。把它排除在计数之外，record_count 就恰好等于 segment 指向本段的 index 行数，从而可以被交叉校验——这正是校验器强制的不变量。"
           },
-          "first_capture_id": { "$ref": "common.schema.json#/$defs/capture_id" },
-          "last_capture_id":  { "$ref": "common.schema.json#/$defs/capture_id" }
+          "first_capture_id": {
+            "$ref": "common.schema.json#/$defs/capture_id"
+          },
+          "last_capture_id": {
+            "$ref": "common.schema.json#/$defs/capture_id"
+          }
         },
-        "required": ["filename", "bytes", "sha256", "record_count"],
+        "required": [
+          "filename",
+          "bytes",
+          "sha256",
+          "record_count"
+        ],
         "additionalProperties": true
       }
     },
-
     "index": {
       "type": "object",
       "properties": {
@@ -100,39 +155,63 @@
           "type": "string",
           "pattern": "^index-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{6}\\.ndjson$"
         },
-        "sha256":     { "$ref": "common.schema.json#/$defs/sha256" },
-        "line_count": { "type": "integer", "minimum": 0 }
+        "sha256": {
+          "$ref": "common.schema.json#/$defs/sha256"
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
-      "required": ["filename", "line_count"],
+      "required": [
+        "filename",
+        "line_count"
+      ],
       "additionalProperties": true
     },
-
     "coverage": {
       "type": "array",
-      "items": { "$ref": "coverage-entry.schema.json" },
+      "items": {
+        "$ref": "coverage-entry.schema.json"
+      },
       "description": "观测到的声明数量。**不是完整性证明**——理由见 coverage-entry.schema.json。"
     },
-
     "crawl_state": {
       "type": "array",
-      "items": { "$ref": "crawl-state-entry.schema.json" },
+      "items": {
+        "$ref": "crawl-state-entry.schema.json"
+      },
       "description": "抓取存档信息。下一次抓取据此确定下界；也是判断完整性的唯一依据。"
     },
-
     "counts": {
       "type": "object",
       "description": "便于快速核对的汇总计数。全部可由 index.ndjson 重新算出，因此是可选的。",
       "properties": {
-        "by_verdict": { "type": "object", "additionalProperties": { "type": "integer" } },
-        "by_surface": { "type": "object", "additionalProperties": { "type": "integer" } },
-        "by_intent":  { "type": "object", "additionalProperties": { "type": "integer" } }
+        "by_verdict": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "by_surface": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "by_intent": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
       },
       "additionalProperties": true
     },
-
-    "notes": { "type": "string" }
+    "notes": {
+      "type": "string"
+    }
   },
-
   "required": [
     "spec_version",
     "bundle_id",
@@ -147,20 +226,30 @@
     "coverage",
     "crawl_state"
   ],
-
   "allOf": [
     {
       "$comment": "已完成的 bundle 必须有完成时间。",
       "if": {
-        "properties": { "status": { "const": "complete" } },
-        "required": ["status"]
+        "properties": {
+          "status": {
+            "const": "complete"
+          }
+        },
+        "required": [
+          "status"
+        ]
       },
       "then": {
-        "properties": { "completed_at": { "type": "string" } },
-        "required": ["completed_at"]
+        "properties": {
+          "completed_at": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "completed_at"
+        ]
       }
     }
   ],
-
   "additionalProperties": true
 }
