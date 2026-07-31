@@ -99,6 +99,17 @@
     },
     "bundle_id": {
       "$ref": "common.schema.json#/$defs/bundle_id"
+    },
+    "floor_from_bundle_id": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/bundle_id"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "本次的 floor_time 取自哪一份 bundle。null 表示没有下界（首次全量）。\n\n不能用 manifest 顶层的 previous_bundle_id 代替：下界是**按路线**选的——某条路线上一次可能没能推进水位线（有缺口、被打断），于是要沿链继续往回找，直到找到那条路线 advanced=true 的那一份。因此同一次抓取里，不同路线的下界可能来自不同的 bundle。\n\n记下它是为了让「基准不在了」这件事**可检测**：校验方按路线核对floor_time == 上一份的 high_water_time，且那一份在场。缺一环就是链上的一个洞，必须报出来，不得当作连着。"
     }
   },
   "required": [
