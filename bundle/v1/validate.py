@@ -97,8 +97,12 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
         rep.error("缺少 README.txt（档案必须自解释，见 SPEC §2）")
     else:
         text = readme.read_text(encoding="utf-8")
-        if "WARC" not in text or "bundle/1.0" not in text:
-            rep.error("README.txt 必须至少说明规范版本与 WARC 的打开方式")
+        # 版本号从 manifest 里取，不写死：写死 "bundle/1.0" 的话，1.1 的档案会因为
+        # README 里如实写着 1.1 而被判不合格——一条只会在小版本递增时才炸、
+        # 且看起来完全无关的规则。顺带这样还更严：README 说的版本必须与 manifest 一致。
+        declared = manifest.get("spec_version", "")
+        if "WARC" not in text or declared not in text:
+            rep.error("README.txt 必须至少说明规范版本（与 manifest 一致）与 WARC 的打开方式")
 
     if schema_validate:
         schema_validate("manifest", manifest, rep, "manifest.json")

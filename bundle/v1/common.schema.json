@@ -7,8 +7,9 @@
   "$defs": {
     "spec_version": {
       "type": "string",
-      "const": "bundle/1.0",
-      "description": "格式版本。大版本变更意味着旧读者会误读数据；小版本变更只增加可选字段。"
+      "pattern": "^bundle/1\\.[0-9]+$",
+      "examples": ["bundle/1.0", "bundle/1.1"],
+      "description": "格式版本。大版本变更意味着旧读者会误读数据；小版本变更只增加可选字段或封闭词表取值。\n\n【为什么是 pattern 而不是 const】原来写死 const: bundle/1.0，于是 1.1 一落地，同一份 schema 就再也校验不过它自己所描述的格式了；反过来若把 const 改成 bundle/1.1，全部既有的 1.0 档案会当场变成非法——而它们是不可重抓的。本目录描述的是【大版本 1 这一整条线】，能读 1.x 的读者都应当接受任何 1.y。真正会让旧读者误读的是大版本，那时另开 v2 目录。"
     },
 
     "bundle_id": {
@@ -72,8 +73,8 @@
     },
 
     "surface": {
-      "enum": ["html", "api"],
-      "description": "该捕获来自哪个抓取面。同一条内容可能在两个面上各被捕获一次；缺少此字段会导致下游把同一内容的两种表示误认为两次修订。"
+      "enum": ["html", "api", "asset"],
+      "description": "该捕获来自哪个抓取面。同一条内容可能在两个面上各被捕获一次；缺少此字段会导致下游把同一内容的两种表示误认为两次修订。\n\nasset 于 bundle/1.1 加入：二进制资源（图片）既不是面向浏览器的 HTML，也不是枚举用的 JSON 接口，把它标成 html 会让下游按页面去解析一份 JPEG。"
     },
 
     "capture_fidelity": {

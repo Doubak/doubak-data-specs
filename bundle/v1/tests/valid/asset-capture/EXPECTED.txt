@@ -1,0 +1,1 @@
+应通过：bundle/1.1 的图片捕获——独立的 assets-* 段，surface=asset。

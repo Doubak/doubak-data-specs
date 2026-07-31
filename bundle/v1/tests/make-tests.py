@@ -9,12 +9,21 @@
 """
 
 import hashlib
+import importlib.util
 import json
 import pathlib
 import shutil
 
 HERE = pathlib.Path(__file__).parent
 EXAMPLE = HERE.parent / "examples" / "minimal-bundle"
+
+# WARC 的写法从生成例子的脚本里【导入】而不是抄一份：抄的那份一旦与例子生成器
+# 漂移，用例就会去校验一种规范里并不存在的字节布局，而且看起来还全是绿的。
+_spec = importlib.util.spec_from_file_location(
+    "make_minimal_bundle", HERE.parent / "examples" / "make-minimal-bundle.py"
+)
+mkb = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(mkb)
 BUNDLE_ID = "20260728T101500Z-a3f9c1"
 SEGMENT = f"data-{BUNDLE_ID}-00001.warc.gz"
 INDEX = f"index-{BUNDLE_ID}.ndjson"
@@ -75,6 +84,127 @@ def case_valid_with_holes() -> None:
         if cov.get("claimed_source") == old_id:
             cov["claimed_source"] = new_id
     save_manifest(d, m)
+
+
+def case_valid_asset_capture() -> None:
+    """bundle/1.1：图片捕获走 assets-* 段、surface=asset。
+
+    这个用例守的是三件很容易同时做错的事：
+
+    ① **surface 是封闭词表，asset 必须在里面。** 不在，就只能把 JPEG 标成 html——
+       下游会拿它去解析页面结构。
+    ② **1.0 的校验器必须仍然认 1.0 的档案。** spec_version 原来是 const，1.1 一
+       落地它就自相矛盾了。这里的 1.1 用例与其余 15 个 1.0 用例同时通过，才说明
+       改成 pattern 是对的。
+    ③ **图片走自己的段。** assets-* 与 catalog-* 分开，是为了让「丢掉可重抓的部分」
+       保持为一次纯文件操作。
+    """
+    d = fresh(
+        "valid",
+        "asset-capture",
+        "应通过：bundle/1.1 的图片捕获——独立的 assets-* 段，surface=asset。",
+    )
+
+    # 一个真的 1×1 PNG。用真字节而不是占位符：校验器要算 sha256 与长度。
+    png = bytes.fromhex(
+        "89504e470d0a1a0a0000000d494844520000000100000001080600000"
+        "01f15c4890000000d49444154789c63f8cfc0f01f00050001ff89993d"
+        "1d0000000049454e44ae426082"
+    )
+
+    seg_name = f"assets-{BUNDLE_ID}-00001.warc.gz"
+    cap_id = f"{BUNDLE_ID}#000003"
+    rec_id = "urn:uuid:00000000-0000-4000-8000-000000000013"
+    url = "https://img3.doubanio.com/view/status/l/public/b79771d06053dd7.jpg"
+
+    warcinfo_block = (
+        f"software: doubak-extension/0.1.0\r\n"
+        f"format: WARC File Format 1.1\r\n"
+        f"isPartOf: {BUNDLE_ID}\r\n"
+        f"conformsTo: https://spec.doubak.com/bundle/v1/\r\n"
+    ).encode()
+    warcinfo = mkb.warc_record(
+        [
+            ("WARC-Type", "warcinfo"),
+            ("WARC-Record-ID", "<urn:uuid:00000000-0000-4000-8000-000000000012>"),
+            ("WARC-Date", "2026-07-28T02:16:00Z"),
+            ("WARC-Filename", seg_name),
+            ("WARC-Block-Digest", mkb.sha1_base32(warcinfo_block)),
+            ("Content-Type", "application/warc-fields"),
+        ],
+        warcinfo_block,
+    )
+    seg = mkb.gzip_member(warcinfo)
+
+    block = mkb.http_response(
+        "HTTP/1.1 200 OK",
+        [("Content-Type", "image/png"), ("Content-Length", str(len(png)))],
+        png,
+    )
+    record = mkb.warc_record(
+        [
+            ("WARC-Type", "response"),
+            ("WARC-Record-ID", f"<{rec_id}>"),
+            ("WARC-Date", "2026-07-28T02:16:04Z"),
+            ("WARC-Target-URI", url),
+            ("WARC-Block-Digest", mkb.sha1_base32(block)),
+            ("WARC-Payload-Digest", mkb.sha1_base32(png)),
+            ("Content-Type", "application/http;msgtype=response"),
+        ],
+        block,
+    )
+    member = mkb.gzip_member(record)
+    offset = len(seg)
+    seg += member
+    (d / seg_name).write_bytes(seg)
+
+    lines = index_lines(d)
+    lines.append(
+        {
+            "capture_id": cap_id,
+            "warc_record_id": rec_id,
+            "segment": seg_name,
+            "offset": offset,
+            "length": len(member),
+            "url": url,
+            "url_key": url,
+            "url_key_rules": "v1",
+            # 用户自己上传的图，不是目录缩略图——留存等级不同，段也不同。
+            "intent": "asset.image.user_upload",
+            "route_key": "broadcast.timeline",
+            "surface": "asset",
+            "verdict": "ok",
+            "capture_fidelity": "decoded_body+observed_headers",
+            "observed_at": "2026-07-28T10:16:04+08:00",
+            "http_status": 200,
+            "content_type": "image/png",
+            "content_sha256": hashlib.sha256(png).hexdigest(),
+            "parent_capture_id": f"{BUNDLE_ID}#000001",
+            "cursor": None,
+        }
+    )
+    save_index(d, lines)
+
+    m = load_manifest(d)
+    m["spec_version"] = "bundle/1.1"
+    m["segments"].append(
+        {
+            "filename": seg_name,
+            "bytes": len(seg),
+            "sha256": hashlib.sha256(seg).hexdigest(),
+            "record_count": 1,
+            "first_capture_id": cap_id,
+            "last_capture_id": cap_id,
+        }
+    )
+    save_manifest(d, m)
+
+    # README 里的版本号必须跟着改：校验器要求两者一致（写死版本号的检查已经改掉了）。
+    readme = d / "README.txt"
+    readme.write_text(
+        readme.read_text(encoding="utf-8").replace("bundle/1.0", "bundle/1.1"),
+        encoding="utf-8",
+    )
 
 
 # --- invalid --------------------------------------------------------------
@@ -271,6 +401,7 @@ def main() -> None:
     for kind in ("valid", "invalid"):
         (HERE / kind).mkdir(parents=True, exist_ok=True)
     case_valid_with_holes()
+    case_valid_asset_capture()
     case_advanced_without_contiguity()
     case_advanced_with_gaps()
     case_dangling_claimed_source()
