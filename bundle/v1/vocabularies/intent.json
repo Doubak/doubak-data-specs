@@ -47,7 +47,7 @@
 
     "redirect.shortlink":             "豆瓣自家的短链跳转（douc.cc）。必须跟随并把 3xx 响应本身也写进 WARC——只存短链等于在档案里留一个指向第三方跳转服务的死指针",
 
-    "asset.image.user_upload":        "用户自己上传的图片（相册、正文内嵌）——写入 assets-* 段",
+    "asset.image.user_upload":        "用户自己上传的图片（广播附图、相册、正文内嵌）——写入 assets-* 段。转发进来的、属于他人的附图不算",
     "asset.image.catalog_thumbnail":  "列表页上的目录缩略图——写入 catalog-* 段",
 
     "probe.canary":                   "廉价探测请求，用于在恢复抓取前确认风控状态",
