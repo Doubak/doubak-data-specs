@@ -285,6 +285,13 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
                 f"crawl_state[{rk}]: enumeration 必须是 full 或 bounded——"
                 f"下游据此判断是否有资格推断删除。"
             )
+        elif cs.get("floor_time") is not None and cs.get("enumeration") == "full":
+            rep.error(
+                f"crawl_state[{rk}]: floor_time={cs['floor_time']} 却写 enumeration=full。"
+                f"走到下界就停的路线是 bounded——下界以下这次根本没看过。"
+                f"标成 full 等于告诉下游「缺的就是删掉的」，"
+                f"于是一份增量与一份全量做差就会把没删的当成删了。"
+            )
 
     # -- checkpoint --------------------------------------------------------
     cp_path = root / "checkpoint.json"

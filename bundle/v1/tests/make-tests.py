@@ -395,6 +395,21 @@ def case_bad_enumeration() -> None:
     save_manifest(d, m)
 
 
+def case_full_with_floor() -> None:
+    d = fresh(
+        "invalid",
+        "full-with-floor",
+        "应报错：这条路线有 floor_time，enumeration 却写 full。\n"
+        "走到下界就停的路线，下界以下这次根本没看过，所以是 bounded。\n"
+        "写成 full 等于告诉下游「整份都枚举过了，缺的就是删掉的」——\n"
+        "拿一份增量与一份全量做差，就会把没删的当成删了。",
+    )
+    m = load_manifest(d)
+    m["crawl_state"][0]["floor_time"] = "2026-07-20T00:00:00+08:00"
+    m["crawl_state"][0]["enumeration"] = "full"
+    save_manifest(d, m)
+
+
 def main() -> None:
     if not EXAMPLE.exists():
         raise SystemExit("请先运行 examples/make-minimal-bundle.py")
@@ -415,6 +430,7 @@ def main() -> None:
     case_bad_offset()
     case_missing_checkpoint()
     case_bad_enumeration()
+    case_full_with_floor()
     case_empty_payload_ok()
     case_record_count_mismatch()
     print("用例已生成。")
