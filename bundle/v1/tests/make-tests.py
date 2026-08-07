@@ -86,6 +86,28 @@ def case_valid_with_holes() -> None:
     save_manifest(d, m)
 
 
+def case_valid_cross_bundle_parent() -> None:
+    """跨档案的 parent_capture_id 必须【合法】（规范 §6.2.1）。
+
+    真实生产路径：一次增量只取回水位线以上的页面，但从**旧档案里已经存下来的**
+    页面中仍可能算出当时没抓的附属资源（正文图片、附件）。把它们放进队列的那次
+    捕获，客观上就发生在旧档案里。
+
+    这个用例守的是「校验器不许把它当悬空引用」。没有它，将来有人给
+    parent_capture_id 加一条「必须存在于本档案」的检查，就会让一批真实档案
+    集体变成不合法——而那些档案已经冻结，改不了。
+    """
+    d = fresh(
+        "valid",
+        "cross-bundle-parent",
+        "应通过：parent_capture_id 指向另一份档案是合法的（规范 §6.2.1）。\n"
+        "读者不得把它当悬空引用；不可达不等于无效——用户可以在导出后删掉旧档案。",
+    )
+    lines = index_lines(d)
+    lines[1]["parent_capture_id"] = "20260101T000000Z-000000#000007"
+    save_index(d, lines)
+
+
 def case_valid_asset_capture() -> None:
     """bundle/1.1：图片捕获走 assets-* 段、surface=asset。
 
@@ -417,6 +439,7 @@ def main() -> None:
         (HERE / kind).mkdir(parents=True, exist_ok=True)
     case_valid_with_holes()
     case_valid_asset_capture()
+    case_valid_cross_bundle_parent()
     case_advanced_without_contiguity()
     case_advanced_with_gaps()
     case_dangling_claimed_source()
