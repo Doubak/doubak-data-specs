@@ -14,7 +14,7 @@
 
     "current_spec_version": {
       "type": "string",
-      "const": "bundle/1.1",
+      "const": "bundle/1.2",
       "description": "本目录当前这一版的版本号——【生产者应当写下的那个值】。\n\n与 spec_version 是两件事，不可混用：spec_version 说的是【读者必须接受什么】（任何 1.x），这里说的是【新档案该写什么】（当前这一版）。把两者合成一个 const，就会在下一次小版本递增时二选一：要么 schema 校验不过它自己描述的格式，要么全部既有档案变成非法。\n\n本定义不被任何 schema 引用，它的作用是让「当前版本是多少」这件事对代码生成器可读，而不必去解析 SPEC.md 的散文。"
     },
 
@@ -74,8 +74,16 @@
     },
 
     "verdict": {
-      "enum": ["ok", "blocked", "challenge", "login", "gone", "soft404"],
-      "description": "对响应可信度的判定，基于内容而非 HTTP 状态码（豆瓣以 HTTP 200 返回封锁页）。封闭词表：这是安全相关字段，取值拼写错误必须校验失败。读者遇到未知取值时必须当作不可信，不得当作 ok。"
+      "enum": ["ok", "blocked", "challenge", "login", "gone", "soft404", "unknown"],
+      "description": "对响应可信度的判定，基于内容而非 HTTP 状态码（豆瓣以 HTTP 200 返回封锁页）。封闭词表：这是安全相关字段，取值拼写错误必须校验失败。读者遇到未知取值时必须当作不可信，不得当作 ok。\n\nunknown 于 bundle/1.2 加入。在此之前没有「判不出来」这个取值，生产者只能退而写 blocked——于是「豆瓣拒绝了」与「页面拿到了但我们不认识」被合并成同一件事，而两者的处置正好相反：前者该等一等再抓，后者重抓一百次也一样，该做的是改抽取器。实测代价：用户照界面上的「被限制」去重试，白费。\n\n【光有这个取值仍然不够】必须配 verdict_reason 说清是哪一种判不出来，否则只是把问题换了个说法。"
+    },
+
+    "verdict_reason": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["frame_anchors_missing", "empty_body", "server_error", "url_drifted"],
+      "description": "verdict 为 unknown 时，说清是哪一种判不出来。**开放词表**——新的原因一定会出现，读者遇到不认识的必须原样保留、不得猜测。取值与含义见 vocabularies/verdict.json 的 unknown_reason。\n\n【为什么必须有它】一个光秃秃的 unknown 只是把问题换了个说法。真正有用的是「这次判不出来该怎么办」，而那由原因决定：\n\n  empty_body / server_error       → 重抓可能有用\n  frame_anchors_missing           → **重抓没有用**，页面已在档案里，改抽取器离线重跑即可\n  url_drifted / unexpected_status → 先看一眼再决定\n\n从原因到处置的映射【由读者推导】，不存进档案——它是解释，而解释应当可以随时重新推导。\n\n【它是便利索引，不是不可恢复的数据】原始字节永远在 WARC 里，重跑分类器就能重新算出原因。所以旧档案没有它不算受损，也不必为它重抓——这一点与 intent / coverage 那类字段性质完全不同。",
+      "$comment": "verdict 不是 unknown 时不应出现；出现了也不算错，读者忽略即可。"
     },
 
     "surface": {

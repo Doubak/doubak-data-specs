@@ -84,6 +84,14 @@
       ],
       "description": "所存储载荷的 SHA-256。注意这是「所存储的」而非「线上的」——具体成色见 capture_fidelity。"
     },
+    "verdict_reason": {
+      "oneOf": [
+        { "$ref": "common.schema.json#/$defs/verdict_reason" },
+        { "type": "null" }
+      ],
+      "description": "verdict = unknown 时说清是哪一种判不出来。见 common.schema.json。"
+    },
+
     "parent_capture_id": {
       "oneOf": [
         {

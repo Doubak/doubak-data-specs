@@ -432,6 +432,34 @@ def case_full_with_floor() -> None:
     save_manifest(d, m)
 
 
+def case_valid_unknown_verdict() -> None:
+    """bundle/1.2：verdict=unknown 配 verdict_reason 必须【合法】。
+
+    守的是两件事：新取值进了封闭词表（1.1 的校验器会拒绝，那是对的），
+    以及 verdict_reason 是开放词表——校验器不得因为不认识某个取值就报错。
+    """
+    d = fresh(
+        "valid",
+        "unknown-verdict",
+        "应通过：bundle/1.2 的 verdict=unknown + verdict_reason。\n"
+        "unknown 与 blocked 处置相反（前者该改抽取器，后者该等一等），必须分开表示。\n"
+        "verdict_reason 是开放词表，读者遇到不认识的取值必须原样保留、不得报错。",
+    )
+    lines = index_lines(d)
+    lines[1]["verdict"] = "unknown"
+    lines[1]["verdict_reason"] = "frame_anchors_missing"
+    lines[1]["note"] = "判不出来：一个内容区块都没有（试过 class=\"note-container\"）"
+    save_index(d, lines)
+    m = load_manifest(d)
+    m["spec_version"] = "bundle/1.2"
+    save_manifest(d, m)
+    readme = d / "README.txt"
+    readme.write_text(
+        readme.read_text(encoding="utf-8").replace("bundle/1.0", "bundle/1.2"),
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     if not EXAMPLE.exists():
         raise SystemExit("请先运行 examples/make-minimal-bundle.py")
@@ -440,6 +468,7 @@ def main() -> None:
     case_valid_with_holes()
     case_valid_asset_capture()
     case_valid_cross_bundle_parent()
+    case_valid_unknown_verdict()
     case_advanced_without_contiguity()
     case_advanced_with_gaps()
     case_dangling_claimed_source()
