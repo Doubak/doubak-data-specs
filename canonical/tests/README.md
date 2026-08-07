@@ -34,6 +34,26 @@ cases/<用例名>/
 | `authorities` | 出现过的 `absence_authority` 集合（去重排序） |
 | `identity_layers` | 出现过的身份层集合 |
 | `warning_types` | 必须报出的告警类型 |
+| `broadcasts` / `broadcast_revisions` / `broadcast_observations` | 广播的记录数 / 修订数 / 观测数 |
+| `broadcast_statuses` | 出现过的非 null 状态集合 |
+| `longform` / `longform_revisions` | 日记与评论的记录数 / 修订数 |
+| `longform_body_contains` | 正文里必须出现的子串 |
+
+**记录数、修订数、观测数是三个不同的量**，别只断言前两个。真实撞到过：广播抽取器
+去掉去重之后，记录数与修订数**都还是 1**（按 sid 归并会把重复合起来），只有观测数
+从 1 变成 2。只看前两个的话，那一步被删掉也测不出来。
+
+## 每个用例都必须**咬得住**
+
+写完用例要反过来验一遍：故意把参考实现打断，看是不是**恰好对应的那一个**变红。
+两次这么做都揪出了套件自己的漏洞：
+
+- `gap-revokes-authority` 原来把 `contiguous=false` 与非空 `gaps` 写在同一份夹具里
+  ——删掉任何一条检查，另一条都会替它挡住。拆成两个独立用例才各咬各的。
+- `pagination-overlap-is-not-a-duplicate` 原来只断言记录数与修订数，而那两个数在
+  去重被删掉之后**不变**。补上观测数才咬得住。
+
+一个全绿但咬不住的套件比没有套件更糟：它会让人以为那条不变量有人看着。
 
 ## 谁来跑
 

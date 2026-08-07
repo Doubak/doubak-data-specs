@@ -445,6 +445,156 @@ def c_no_manifest_still_readable():
                 status=None)
 
 
+def broadcast_page(items, owner="82160871"):
+    """一页广播时间线。转发不是嵌套结构：原作者那条整个渲染成一个顶层 wrapper。"""
+    out = []
+    for it in items:
+        uid = it.get("uid", owner)
+        quote = f'<blockquote><p>{it["text"]}</p></blockquote>' if it.get("text") else ""
+        out.append(
+            f'<div class="new-status status-wrapper" data-sid="{it["sid"]}" data-uid="{uid}">'
+            f'<a class="lnk-people">MewX</a> {it.get("action", "想看")}'
+            f'<span class="created_at" title="{it["at"]}">x</span>{quote}'
+            f'<div data-target-type="movie" data-object-id="{it.get("target", "1292052")}"></div>'
+            f'<div data-status-url="https://www.douban.com/people/example/status/{it["sid"]}/"></div>'
+            "</div>"
+        )
+    nav = '<li class="nav-user-account"><a href="/accounts/logout">退出</a></li>'
+    return (
+        f"<html><head><title>我的动态</title></head><body>{nav}"
+        f'<div id="db-usr-profile"><h1>示例</h1></div>'
+        f'<div class="stream-items">{"".join(out)}</div></body></html>'
+    ).encode()
+
+
+def note_page(note_id, body, views):
+    """一张日记正文页。`views` 是页脚的浏览计数——它每次抓取都在涨。"""
+    return (
+        f"<html><body>"
+        f'<div id="note-{note_id}" class="note-container" '
+        f'data-url="https://www.douban.com/note/{note_id}/" data-author="MewX">'
+        f"<h1>日记标题</h1>"
+        f'<span class="pub-date">2025-04-14 18:47:50 澳大利亚</span>'
+        f'<div class="note" id="note_{note_id}_short" style="display:none;"></div>'
+        f'<div id="note_{note_id}_full"><div id="link-report">'
+        f'<div class="note"><p data-page="0">{body}</p></div>'
+        f"</div></div>"
+        f'<div id="note_{note_id}_footer">{views}人浏览 编辑 | 删除</div>'
+        f"</div></body></html>"
+    ).encode()
+
+
+BC = ("broadcast.timeline", "broadcast.timeline")
+NOTE = ("note.item", "note.item")
+
+
+def c_broadcast_is_immutable():
+    b = case(
+        "broadcast-is-immutable",
+        "【广播发布后不可编辑 —— 同一条被观测两次，只该有一条修订】\n"
+        "实测：3392 条广播、3392 条修订，一比一；其中 24 条被观测了不止一次，内容全\n"
+        "都没变。反过来说，广播出现第二条修订**不是**「用户改了」，是抽取器或页面变了\n"
+        "——那是要去看的，不是要接受的。这与标记正好相反。\n"
+        "解析器必须：1 条广播、1 条修订、2 次观测。",
+        {"broadcasts": 1, "broadcast_revisions": 1},
+    )
+    page = [{"sid": "9391534147", "at": "2026-07-18 12:44:56", "text": "能上6分我觉得都是国产好片"}]
+    for bid, t in [("20260728T101500Z-b00001", T1), ("20260804T101500Z-b00002", T2)]:
+        make_bundle(b, bid, [(*BC, "ok", t, broadcast_page(page))],
+                    previous=None if t == T1 else "20260728T101500Z-b00001",
+                    crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                    enumeration="bounded",
+                                    floor_time="2026-07-01T00:00:00+08:00")])
+
+
+def c_pagination_overlap_is_not_a_duplicate():
+    b = case(
+        "pagination-overlap-is-not-a-duplicate",
+        "【同一条广播出现在同一页两次，只算一条】\n"
+        "豆瓣的列表是头插的：抓取期间有新内容插进来，就会把条目往后推，于是相邻两页\n"
+        "会重叠。爬虫刻意选择「新→旧」翻页，就是为了让这种情况产出**重复**（免费修好）\n"
+        "而不是**遗漏**（不可检测且永久）。\n"
+        "实测一份真实档案：3386 个 wrapper / 3382 个唯一 sid。\n"
+        "解析器必须按 data-sid 去重：1 条广播、1 条修订、**1 次观测**。\n"
+        "最后那个数是关键：不去重的话记录数与修订数仍然是 1（按 sid 归并会把它们\n"
+        "合起来），只有观测数会变成 2。只断言前两个的话，去重被删掉也测不出来。",
+        {"broadcasts": 1, "broadcast_revisions": 1, "broadcast_observations": 1},
+    )
+    one = {"sid": "444", "at": "2026-07-18 12:00:00", "text": "同一条"}
+    make_bundle(b, "20260728T101500Z-b30001",
+                [(*BC, "ok", T1, broadcast_page([one, one]))],
+                crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                enumeration="bounded", floor_time="2026-07-01T00:00:00+08:00")])
+
+
+def c_reshared_is_not_mine():
+    b = case(
+        "reshared-is-not-mine",
+        "【转发进来的广播是别人的，不得存进档案主人的 canonical】\n"
+        "转发不是嵌套结构：豆瓣把原作者那条整个渲染成一个顶层 wrapper，data-uid 是\n"
+        "**原作者**。实测 3394 个 wrapper 里有 8 个是别人的。\n"
+        "与广播附图那条规则同一个判据、同一个理由。\n"
+        "解析器必须只产出 1 条广播（自己那条）。",
+        {"broadcasts": 1},
+    )
+    make_bundle(b, "20260728T101500Z-b10001",
+                [(*BC, "ok", T1, broadcast_page([
+                    {"sid": "111", "at": "2026-07-18 12:00:00", "text": "我自己发的"},
+                    {"sid": "222", "at": "2026-07-18 13:00:00", "text": "别人发的", "uid": "1155157"},
+                ]))],
+                crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                enumeration="bounded", floor_time="2026-07-01T00:00:00+08:00")])
+
+
+def c_action_not_forced_into_status():
+    b = case(
+        "action-not-forced-into-status",
+        "【动作映射不到三种标记状态时，status 必须是 null】\n"
+        "「收藏图书到豆列」不是一个标记状态，塞进 wish/done/doing 任何一格都是编造。\n"
+        "实测动作分布里这类有 61 条，另有 24 条转发、27 条抽不到。\n"
+        "解析器必须：产出 1 条广播，且它的 status 为 null（动作原文照存）。",
+        {"broadcasts": 1, "broadcast_statuses": []},
+    )
+    make_bundle(b, "20260728T101500Z-b20001",
+                [(*BC, "ok", T1, broadcast_page([
+                    {"sid": "333", "at": "2026-07-18 12:00:00", "action": "收藏图书到豆列"}]))],
+                crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                enumeration="bounded", floor_time="2026-07-01T00:00:00+08:00")])
+
+
+def c_view_counter_is_not_an_edit():
+    b = case(
+        "view-counter-is-not-an-edit",
+        "【页脚的浏览计数不是编辑】\n"
+        "同一篇日记，两次抓取之间正文一字未改，只有页脚的「1740人浏览」涨成了\n"
+        "「1741人浏览」。一个正文右端没钉死的抽取器会把它吞进正文，于是产出两条修订\n"
+        "——看起来像用户改了。\n"
+        "**这是这套系统最坏的一种错：凭空捏造编辑历史，而且不会报错。** canonical\n"
+        "存在的全部理由就是「这条什么时候改的」，一个溢出的正则足以让那个答案全是噪音。\n"
+        "解析器必须：1 篇长文、1 条修订。",
+        {"longform": 1, "longform_revisions": 1},
+    )
+    for bid, t, v in [("20260728T101500Z-c00001", T1, 1740), ("20260804T101500Z-c00002", T2, 1741)]:
+        make_bundle(b, bid, [(*NOTE, "ok", t, note_page("872015292", "正文一字未改。", v))],
+                    previous=None if t == T1 else "20260728T101500Z-c00001",
+                    crawl_state=[cs("note.item", intent="note.item")])
+
+
+def c_longform_body_is_not_the_summary():
+    b = case(
+        "longform-body-is-not-the-summary",
+        "【正文页上的 _short 是空的，不得当成正文】\n"
+        "列表页上的那份是截断摘要（真实页面以 `number=xxx...` 结尾），全文只在正文页。\n"
+        "而正文页上 `#note_<id>_short` 是空的、display:none——摘要那一份只在列表页渲染。\n"
+        "抓错容器的话，正文会变成空的，而且照样产出一条「记录」。\n"
+        "解析器必须：1 篇长文，且正文非空、包含全文里的那句话。",
+        {"longform": 1, "longform_body_contains": "只有正文页才有的一句"},
+    )
+    make_bundle(b, "20260728T101500Z-c10001",
+                [(*NOTE, "ok", T1, note_page("868128497", "只有正文页才有的一句。", 10))],
+                crawl_state=[cs("note.item", intent="note.item")])
+
+
 def main():
     (HERE / "cases").mkdir(exist_ok=True)
     c_login_is_not_content()
@@ -456,6 +606,12 @@ def main():
     c_status_transition_is_one_record()
     c_unknown_verdict_is_not_ok()
     c_no_manifest_still_readable()
+    c_broadcast_is_immutable()
+    c_pagination_overlap_is_not_a_duplicate()
+    c_reshared_is_not_mine()
+    c_action_not_forced_into_status()
+    c_view_counter_is_not_an_edit()
+    c_longform_body_is_not_the_summary()
     print("用例已生成。")
 
 
