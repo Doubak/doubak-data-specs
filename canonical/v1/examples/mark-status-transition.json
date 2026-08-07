@@ -1,0 +1,133 @@
+{
+  "canonical_version": "canonical/1.0",
+  "identity_layer": "upstream_id",
+  "upstream_id": "4891953008",
+  "account": {
+    "user_id": "82160871",
+    "username": "mewcatcher"
+  },
+  "medium": "movie",
+  "subject": {
+    "id": "36838707",
+    "url": "https://movie.douban.com/subject/36838707/",
+    "upstream_deleted": false
+  },
+  "revisions": [
+    {
+      "parser_version": "doubak-data-parser/0.0.0-example",
+      "first_observed_at": "2026-08-01T11:07:49+10:00",
+      "last_observed_at": "2026-08-01T11:07:49+10:00",
+      "fields": {
+        "status": "wish",
+        "marked_at": {
+          "raw": "2026-07-18",
+          "iso": "2026-07-18T00:00:00+08:00",
+          "precision": "day",
+          "timezone_assumption": "Asia/Shanghai"
+        },
+        "rating": null,
+        "comment": "能上6分我觉得都是国产好片",
+        "tags": null,
+        "raw_meta": "2024-12-31(中国大陆) / 金晨 / 孙阳 / 李雪琴 / 王皓 / 王耀庆 / 柳岩 / 宋木子 / 童漠男 / 衣云鹤 / 小爱 / 中国大陆 / 苏彪 / 2024-12-20 20:50 / 114分钟 / 喜剧 / 爱情 / 杨玉婷 Yuting Yang / 汉语普通话"
+      },
+      "digests": {
+        "status": "sha256:091e606752615c91da70540d9951464cd898f7c2a420fc7181b4f6793772e723",
+        "marked_at": "sha256:84c891e73298e979d9d12a975e60ec9505a4c67c50b5d3c50e69d29d8cfb5b71",
+        "rating": null,
+        "comment": "sha256:64aa84da173fc71a5067b238631c4b48e0850a88b4e8af9285c4b8e8ba71d9db",
+        "tags": null,
+        "raw_meta": "sha256:bcdeeccb2093c05e5b7ed9f0d8e12782ec0083138c6350ab8e7da04eec3c2266"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260801T005010Z-3eef52",
+          "capture_ids": [
+            "20260801T005010Z-3eef52#000356"
+          ],
+          "observed_at": "2026-08-01T11:07:49+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.0.0-example",
+      "first_observed_at": "2026-08-04T18:40:46+10:00",
+      "last_observed_at": "2026-08-07T16:26:00+10:00",
+      "fields": {
+        "status": "done",
+        "marked_at": {
+          "raw": "2026-08-01",
+          "iso": "2026-08-01T00:00:00+08:00",
+          "precision": "day",
+          "timezone_assumption": "Asia/Shanghai"
+        },
+        "rating": 4,
+        "comment": "确实还不错，剧情挺有趣的，有些反转，虽然略生硬，但是还是不错的。之前就说能上6分我觉得都是国产好片。这个女主也特别眼熟，然后想起来就是之前看的《凡人修仙传》的女主。",
+        "tags": [
+          "2024",
+          "中国",
+          "香港",
+          "剧情",
+          "犯罪"
+        ],
+        "raw_meta": "2024-12-31(中国大陆) / 金晨 / 孙阳 / 李雪琴 / 王皓 / 王耀庆 / 柳岩 / 宋木子 / 童漠男 / 衣云鹤 / 小爱 / 中国大陆 / 苏彪 / 2024-12-20 20:50 / 114分钟 / 喜剧 / 爱情 / 杨玉婷 Yuting Yang / 汉语普通话"
+      },
+      "digests": {
+        "status": "sha256:a4c3ed04a95a3da14a9d235c83d868bed7c0f45cf7f3faa751ee8f50598d2211",
+        "marked_at": "sha256:cf60422aa0bf1b0354dfa90bd3dae09b4e0a63d88abc41cafcf57aaedbbad7d6",
+        "rating": "sha256:4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+        "comment": "sha256:dfee9552a2ed180341eb82ee8f36191b9658c0945ec8d6edfc55073dc8e2f6fb",
+        "tags": "sha256:e6d95bf8616d094600fae2dab4588dafa98797ec4a2acd36a18aef4d7362914d",
+        "raw_meta": "sha256:bcdeeccb2093c05e5b7ed9f0d8e12782ec0083138c6350ab8e7da04eec3c2266"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260804T084014Z-627045",
+          "capture_ids": [
+            "20260804T084014Z-627045#000016"
+          ],
+          "observed_at": "2026-08-04T18:40:46+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260806T083926Z-f72157",
+          "capture_ids": [
+            "20260806T083926Z-f72157#000016"
+          ],
+          "observed_at": "2026-08-06T18:40:14+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260806T131620Z-354a1d",
+          "capture_ids": [
+            "20260806T131620Z-354a1d#000024"
+          ],
+          "observed_at": "2026-08-06T23:17:07+10:00",
+          "absence_authority": "above_floor",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260807T050438Z-9f5719",
+          "capture_ids": [
+            "20260807T050438Z-9f5719#000143"
+          ],
+          "observed_at": "2026-08-07T15:11:18+10:00",
+          "absence_authority": "above_floor",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260807T062518Z-c34601",
+          "capture_ids": [
+            "20260807T062518Z-c34601#000022"
+          ],
+          "observed_at": "2026-08-07T16:26:00+10:00",
+          "absence_authority": "above_floor",
+          "surface": "html"
+        }
+      ]
+    }
+  ]
+}

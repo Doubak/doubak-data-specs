@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/subject.schema.json",
+  "title": "doubak canonical v1 — 一个作品（subjects.ndjson 的一行）",
+  "description": "豆瓣的作品条目：电影、书、专辑、游戏、舞台剧。\n\n【与用户内容分开存，这一条不可违反】用户写的东西（标记、短评、评分、标签）与作品目录数据的留存期限、删除语义、法律处境都不同。混进一张表，「导出你自己的数据」就再也说不清导的是什么。\n\n【它是缓存，不是圣物】作品数据随时可以整个删掉，从 WARC 重新解析出来——判据与 bundle 那边的 catalog-* 段一致：谁上传的。用户的标记删了就没了，作品条目只要豆瓣还在就能重抓。\n\n因此这个 schema 刻意【薄】：只放能从页面上直接读到、且不需要任何推断的东西。拆解 raw_meta、补外部链接、猜语言标签——全部归 enricher。",
+
+  "type": "object",
+  "required": ["canonical_version", "medium", "id", "revisions"],
+  "additionalProperties": true,
+
+  "properties": {
+    "canonical_version": { "$ref": "common.schema.json#/$defs/canonical_version" },
+    "medium": { "$ref": "common.schema.json#/$defs/medium" },
+
+    "id": {
+      "type": "string",
+      "description": "豆瓣的作品 id。同一个数字在不同媒介下可能撞车，所以主键是 (medium, id) 而不是 id。"
+    },
+
+    "url": { "type": ["string", "null"] },
+
+    "upstream_deleted": {
+      "type": "boolean",
+      "default": false,
+      "description": "豆瓣删掉了这个作品条目。\n\n【删掉的是作品，不是用户的标记】——标记还在，评分、标签、短评全在。实测电影 8 条、游戏 7 条。\n\n此时 `title` 必须是 null：页面上写的「未知电影」/「未知游戏」是豆瓣的占位符，不是作品名。存进去它会被当真名显示、被 enricher 拿去外部检索、被导出到 NeoDB。"
+    },
+
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "与标记同理：只在内容变了的时候追加，不是每次观测追加。\n\n作品数据比标记更常变（豆瓣会补演员、改分类），但那不是用户的编辑——下游要能把两者分开，所以两边分开存修订。",
+      "items": { "$ref": "#/$defs/revision" }
+    }
+  },
+
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": ["parser_version", "first_observed_at", "last_observed_at", "fields", "digests", "observations"],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": { "$ref": "common.schema.json#/$defs/parser_version" },
+        "first_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "last_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+
+        "fields": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "title": {
+              "type": ["string", "null"],
+              "description": "作品名，原样保留。\n\n【上游条目被删时必须是 null】见 upstream_deleted。"
+            },
+            "aliases": {
+              "type": ["array", "null"],
+              "items": { "type": "string" },
+              "description": "又名。豆瓣用 ` / ` 分隔，原样切开即可——这一处切分是安全的，因为它是同一类东西的列表，不是异构字段的拼接（对比 raw_meta）。\n\n【不得猜语言标签】又名里混着粤语、闽南语、英语与各种转写，全都不带标注。`lang` 一律 null，语言识别属于 enricher，产出带 source 与置信度、可以重跑。写错的标签在源页面消失之后无法挽回——CLAUDE.md 明令这一条。"
+            },
+            "cover_url": {
+              "type": ["string", "null"],
+              "description": "封面图的 URL，原样保留（含尺寸参数，不归一化）。\n\n图片字节本身在 bundle 的 catalog-* 段里，通过 observations 的 capture_ids 可达。这里只存 URL——canonical 是文本，不装二进制。"
+            },
+            "raw_meta": {
+              "type": ["string", "null"],
+              "description": "那一行无标签的 `/` 分隔元信息，原样存字符串。理由见 mark.schema.json 里同名字段：电影 2090 条里出现过 43 种段数，没有位置模式可言。"
+            }
+          }
+        },
+
+        "digests": {
+          "type": "object",
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" }
+        },
+
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/observation" }
+        }
+      }
+    }
+  }
+}

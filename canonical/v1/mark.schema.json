@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/mark.schema.json",
+  "title": "doubak canonical v1 — 一条标记（marks.ndjson 的一行）",
+  "description": "用户对一个作品的标记：看过/在看/想看，连同评分、短评、标签。\n\n【这是用户自己写的东西】，与作品目录数据分开存（subject.schema.json）——两者的留存期限、删除语义、法律处境都不同。CLAUDE.md 把这一条列为不可违反的推论。\n\n【一行 = 一条记录 + 它的全部修订】而不是拆成两个文件去 join。理由是这个项目的立身之本：「NDJSON 用 jq 就能查，永远」。拆开之后回答任何问题都要先 join，而 `jq 'select(.subject.id==\"1292052\")'` 一句话就该给出这条标记的全部历史。\n\n修订不多——实测五份成链档案里，被观测 ≥2 次的 105 条标记中只有 3 条真的变过。",
+
+  "type": "object",
+  "required": [
+    "canonical_version", "identity_layer", "account", "medium", "subject", "revisions"
+  ],
+  "additionalProperties": true,
+
+  "properties": {
+    "canonical_version": { "$ref": "common.schema.json#/$defs/canonical_version" },
+
+    "identity_layer": { "$ref": "common.schema.json#/$defs/identity_layer" },
+
+    "upstream_id": {
+      "type": ["string", "null"],
+      "description": "豆瓣自己的标记记录 id。电影/书/音乐/舞台剧取 `data-cid`，游戏取 `/j/ilmen/thing/<id>/interest` 里的那个数。\n\n【它稳，但经常没有】跨五份档案统计所有被观测 ≥2 次的标记：一致 105 条、变了 0 条，包括一条跨状态迁移的。而游戏 601 条全无，2023-12 之前抓的任何媒介也全无。所以它是身份的首选层，不是必填字段。"
+    },
+
+    "account": {
+      "type": "object",
+      "description": "档案主人。【数字 id 是归属主键】——用户名可以改，改了之后新旧档案对不上，而数字 id 不会。",
+      "required": ["user_id"],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": { "type": "string" },
+        "username": { "type": ["string", "null"] }
+      }
+    },
+
+    "medium": { "$ref": "common.schema.json#/$defs/medium" },
+
+    "subject": {
+      "type": "object",
+      "description": "指向作品。【只放引用，不放作品数据】——作品的标题、导演、封面都在 subjects.ndjson 里。",
+      "required": ["id"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": ["string", "null"] },
+        "upstream_deleted": {
+          "type": "boolean",
+          "default": false,
+          "description": "豆瓣把作品条目删了，而这条标记还在。\n\n实测电影 8 条、游戏 7 条。列表上留下一条孤儿：占位图、标题写「未知电影」/「未知游戏」，而【评分、标签、短评全在】——那些是用户自己写的，正是最该留住的部分。\n\n【那个占位符不是标题】不得把「未知游戏」当作品名存进 subjects——它会被下游当真名显示、被 enricher 拿去外部检索、被导出到 NeoDB，一路传播。作品名记 null，用这个布尔说明为什么。"
+        }
+      }
+    },
+
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。\n\n【只在内容变了的时候追加一条，不是每次观测追加一条】判据是逐字段摘要。一次没有变化的观测只是延长既有修订的 `last_observed_at` 并追加一条 observation。\n\n为什么：实测 2933 条标记 × 6 次抓取 ≈ 17600 次观测，其中真正的编辑只有 3 次。按观测追加会让 99.98% 的行是噪音，而「这条什么时候变过」——canonical 存在的理由——反而要从噪音里筛。\n\n观测本身没有丢：每条修订的 `observations` 数组记着所有看见过它的捕获，「我们在 T 时刻看到它还是这样」照样可查。",
+      "items": { "$ref": "#/$defs/revision" }
+    }
+  },
+
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": ["parser_version", "first_observed_at", "last_observed_at", "fields", "digests", "observations"],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": { "$ref": "common.schema.json#/$defs/parser_version" },
+
+        "first_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "last_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp",
+          "description": "最后一次看到内容仍是这样。与 first 相等表示只观测到一次。\n\n【这两个时间界定的是「我们看到的窗口」，不是「上游保持这样的时间」】用户可能在两次抓取之间改了又改回来。canonical 只能说我们看到了什么。"
+        },
+
+        "fields": {
+          "type": "object",
+          "description": "这一版的字段快照。\n\n【任何一个来自页面的字段都不得设为必填】实测可用率：电影评分 63%、书评分 34%、音乐短评 0%、游戏评分 51%。音乐 0% 有短评不是抽取器坏了，是这个用户没给音乐写过短评。\n\n【「抽不到」与「上游是空的」必须能分开】字段缺席 = 这次没抽到；字段为 null = 页面上确实没有；字段为空串 = 页面上有这个位置但内容是空的。混成一个，每次抽取器改进都会表现为一批假编辑。",
+          "additionalProperties": true,
+          "properties": {
+            "status": { "$ref": "common.schema.json#/$defs/status" },
+            "marked_at": {
+              "oneOf": [{ "$ref": "common.schema.json#/$defs/partial_date" }, { "type": "null" }],
+              "description": "页面上那个日期。\n\n【它属于这一版修订，不属于这条记录】实测：同一条记录（upstream_id 不变）状态从「想看」变成「看过」时，日期从 2026-07-18 变成了 2026-08-01。它的语义是「这条标记到达当前状态的时间」，会跟着状态迁移一起动。把它当成记录的创建时间，会让每次状态迁移都看起来像「删了重建」。\n\n实测精度只到天；同一条记录的广播观测能到秒，所以合并时不得用这个覆盖那个。"
+            },
+            "rating": {
+              "type": ["integer", "null"],
+              "minimum": 1,
+              "maximum": 5,
+              "description": "1–5 星。null 表示未评分——【那是真实状态，不是缺失】，实测电影 37% 的标记就是没有评分。"
+            },
+            "comment": {
+              "type": ["string", "null"],
+              "description": "用户写的短评，原样保留。"
+            },
+            "tags": {
+              "type": ["array", "null"],
+              "items": { "type": "string" },
+              "description": "用户自己的标签。\n\n【匿名抓取会整批丢掉它】实测 2023-01 那一批 105 张电影页全是匿名抓的，条目一条不少，标签 0 个（前后两批分别是 945 和 1051）。所以带这个字段的修订必须来自 verdict=ok 的捕获，否则会产出「用户删光了标签又加回来」这种四万条级别的假编辑。见 ../INGESTION.md §2.2。"
+            },
+            "raw_meta": {
+              "type": ["string", "null"],
+              "description": "作品那一行元信息，【原样存字符串，不拆】。\n\n它是个无标签的 `/` 分隔串，每种媒介混装不同的东西：书是「作者 / 译者 / 出版社 / 日期 / 价格」，电影是「上映日期 / 演员若干 / 国家若干 / 导演 / 片长 / 类型 / 语言」。\n\n【按位置拆是不可能的】实测电影 2090 条里出现过 43 种不同的段数（5 到 48），而第 2 段有时是演员、有时是另一个上映日期。\n\n【按内容猜不该在这一层做】「像日期的是日期」这类启发式属于 enricher——它的产出带 source 与置信度、可以重跑；解析器的产出会被当作「页面当时就是这么说的」。在解析层猜错等于把猜测冒充成观测，而源页面消失之后两者再也分不开。与「解析器不得猜语言标签」是同一条规则。\n\n严格说这个字段是作品数据而不是用户数据，但它随标记列表页一起抓到、且只有那一行的版本，所以留在这里当观测记录；权威的作品数据在 subjects.ndjson。"
+            }
+          }
+        },
+
+        "digests": {
+          "type": "object",
+          "description": "逐字段摘要，键与 `fields` 对应。\n\n【必须逐字段算，不能整条算一个】否则改一次评分会让短评也看起来被重写过，而「这条评论什么时候改的」正是这套数据要回答的问题。\n\n规范化只做 NFC、去尾部空白、统一换行。【绝不折叠简繁与大小写】——那些是真实的编辑。",
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" }
+        },
+
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/observation" },
+          "description": "所有看到过这一版的捕获，按时间升序。\n\n这是 canonical 可以整个删掉重新生成的凭据：每一条断言都能指回 WARC 里的具体字节。"
+        }
+      }
+    }
+  }
+}

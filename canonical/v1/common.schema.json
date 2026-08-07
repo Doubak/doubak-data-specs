@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/common.schema.json",
+  "title": "doubak canonical v1 — 公共定义",
+  "description": "被本目录下其他 schema 引用的公共类型。本文件自身不描述任何文件。\n\n【与 bundle/ 的生命周期相反】bundle 是不可逆步骤的产物，用户跑过一次就冻结；canonical 是解析器的产出，拿着已有的 WARC 重跑不要钱。所以这里的版本递增远比 bundle 那边随意——真正不能改的东西都在 bundle 里。",
+
+  "$defs": {
+    "canonical_version": {
+      "type": "string",
+      "pattern": "^canonical/1\\.[0-9]+$",
+      "examples": ["canonical/1.0"],
+      "description": "格式版本。与 bundle 的同名字段是同一套读者规则（读者接受任何 1.x），但递增的代价完全不同：canonical 可以整个删掉重新生成，所以这里不需要 bundle 那种「只增不改」的克制。"
+    },
+
+    "parser_version": {
+      "type": "string",
+      "minLength": 1,
+      "examples": ["doubak-data-parser/0.3.1"],
+      "description": "产出这条修订的解析器版本。\n\n【只能比较同一个 parser_version 的修订】否则修好一个抽取 bug 会让四万条记录看起来像是同时被编辑过——那不是编辑，是我们换了眼镜。这是 canonical 里最容易被忽略、后果又最大的一条规则。\n\n实测过的例子：书的时间选择器要求日期紧接着 `<`，而页面上日期后面跟着「读过」两个字，于是三条书的路线一条时间都抽不到。修好之后，所有书的标记都会多出一个时间字段——那不是用户做了什么。"
+    },
+
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "字段摘要。规范化只做四件事：NFC、去掉尾部空白、统一换行、别的都不做。\n\n【绝不折叠简繁，也绝不折叠大小写】那些是真实的编辑。把「臺灣」和「台湾」算成同一个，等于把用户的一次修改抹掉。"
+    },
+
+    "medium": {
+      "type": "string",
+      "examples": ["movie", "tv", "book", "music", "game", "podcast", "performance"],
+      "description": "媒介。【开放词表】——照抄 NeoDB 的取值（book / movie / tv / music / game / podcast / performance），因为对接迟早要做，没理由自造一套。\n\n但保持开放：豆瓣有「舞台剧」（映到 performance）与「移动应用」（NeoDB 没有对应），而豆瓣自己也会增删板块。读者遇到不认识的取值必须原样保留，不得猜测、不得丢弃。"
+    },
+
+    "status": {
+      "enum": ["done", "doing", "wish"],
+      "description": "标记状态。【封闭词表】，只有三个取值。\n\n豆瓣对每种媒介用不同的动词（看过/读过/听过/玩过），那是【展示】层面的事，不是数据层面的——「看过一本书」是错的说法，但「done 一本书」没问题。动词映射归投影层。\n\n实测有一份免费的交叉校验：列表页上的 `rel=\"<id>:P|F|N\"` 是状态的第二份编码，P=done、F=wish、N=doing，2327 条全部吻合。它与 `intent` 分歧时说明路线映射错了或页面变了。"
+    },
+
+    "identity_layer": {
+      "enum": ["upstream_id", "degraded_key", "observation_only"],
+      "description": "这条记录的身份是靠哪一层确定的。【必填，不得省略】——省掉它，下游就无从判断两条记录合并得可不可信。\n\n  upstream_id      豆瓣自己的记录 id（data-cid，或游戏的 /j/ilmen/thing/N/interest）。最可信\n  degraded_key     (账号, 媒介, 作品 id)。它把状态迁移正确识别为同一条记录\n  observation_only 两者都没有，只能记为一次观测，不得与任何既有记录合并\n\n【为什么必须分层】实测：游戏 601 条全都没有 data-cid；2023-12 之前抓的任何媒介也都没有（前代档案 3078 条全无）。把 upstream_id 设为必填，等于宣布一半的历史档案无法解析。\n\n degraded_key 的代价要写清楚：同一个作品被标记、删除、又重新标记，退化键会把它们并成一条。这是可接受的——错误方向是少报一次删除，不是凭空捏造一次。"
+    },
+
+    "absence_authority": {
+      "enum": ["whole_route", "above_floor", "none"],
+      "description": "这次观测有没有资格解释「没看见」。详见 ../INGESTION.md §3。\n\n  whole_route  整条路线的缺失都可解释为删除（full ∧ contiguous ∧ 无缺口 ∧ complete）\n  above_floor  只有 floor_time 之后的缺失可解释为删除（增量抓取天然是这一档）\n  none         任何缺失都不得解释为删除\n\n【这是「永远不要丢弃数据，要丢弃的是能下什么结论」那句话的落地形式】被中断的抓取、只走到水位线的增量抓取，它们看到的东西都是真的；不真的是「它们没看到的东西不存在」。"
+    },
+
+    "observation": {
+      "type": "object",
+      "description": "一次观测的出处。指回 bundle，使 canonical 可以整个删掉重新生成。",
+      "required": ["bundle_id", "capture_ids", "observed_at", "absence_authority"],
+      "additionalProperties": true,
+      "properties": {
+        "bundle_id": { "type": "string" },
+        "capture_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "支撑这次观测的捕获。【可以跨 bundle】——见 bundle/v1/SPEC.md §6.2.1。"
+        },
+        "observed_at": { "$ref": "#/$defs/timestamp" },
+        "absence_authority": { "$ref": "#/$defs/absence_authority" },
+        "surface": {
+          "type": "string",
+          "examples": ["html", "api"],
+          "description": "同一条内容在 HTML 面与 API 面各存一份。不区分就会把它们当成两次修订，于是每次抓取都产出一堆假编辑。"
+        }
+      }
+    },
+
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?([+-][0-9]{2}:[0-9]{2}|Z)$",
+      "description": "RFC 3339，【必须带显式时区偏移】。裸时间戳会被下游按本地时区解释，而这套数据的读者散布在多个时区。"
+    },
+
+    "partial_date": {
+      "type": "object",
+      "description": "豆瓣给的时间精度参差不齐，必须把「精度」显式记下来，不能靠补零糊过去。\n\n实测：标记列表页只给到天（2026-07-18），而同一条记录的广播给到秒（2026-07-18 12:44:56）。合并两个观测时，不得用低精度的覆盖高精度的——补零之后它们看起来一样精确，那是假的。",
+      "required": ["raw", "precision"],
+      "additionalProperties": false,
+      "properties": {
+        "raw": {
+          "type": "string",
+          "description": "页面上的原始字符串，【原样保留】。解析失败时这一条仍然有效。"
+        },
+        "iso": {
+          "oneOf": [{ "$ref": "#/$defs/timestamp" }, { "type": "null" }],
+          "description": "解析结果。解析不了就是 null——不得猜。"
+        },
+        "precision": {
+          "enum": ["second", "minute", "hour", "day", "month", "year", "unknown"],
+          "description": "iso 里有多少位是真的。day 表示时分秒是补出来的。"
+        },
+        "timezone_assumption": {
+          "type": ["string", "null"],
+          "description": "豆瓣不标时区。补上的那个是【假定】，必须记下来是哪一个（通常 Asia/Shanghai），否则下游无法区分「这是真的偏移」与「这是我们猜的」。"
+        }
+      }
+    }
+  }
+}
