@@ -1,0 +1,4 @@
+【连续性证明不成立就没有缺失推断权】
+与 gap-revokes-authority 是**两个独立的条件**，各测一个：这一份 gaps 是空的，
+只是 contiguous=false。合成一个用例的话，删掉解析器里任何一条检查都测不出来。
+解析器必须把 absence_authority 降为 none。

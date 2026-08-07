@@ -1,0 +1,6 @@
+【增量抓取不得授予「整条路线」的缺失推断权】
+第一份是全量（enumeration=full），第二份是增量（bounded + floor_time），
+第二份里少了一条标记。天真的实现会判定那条被删了——而增量只读到下界为止，
+下界以下这次压根没看。
+解析器必须：两条标记都在（第一份看到的不许丢），且第二份那次观测的
+absence_authority 是 above_floor 而不是 whole_route。

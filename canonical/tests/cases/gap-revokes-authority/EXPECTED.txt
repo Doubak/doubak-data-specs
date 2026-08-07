@@ -1,0 +1,5 @@
+【记了缺口就没有任何缺失推断权】
+这一份 enumeration=full、status=complete、**contiguous 还是 true**——只是记了
+一处缺口。解析器仍然必须把 absence_authority 降为 none。
+不是「缺口那一段不算」：缺口意味着我们不知道漏了什么，而漏掉的东西完全
+可能正好在别处。
