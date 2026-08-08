@@ -507,6 +507,34 @@ def c_broadcast_is_immutable():
                                     floor_time="2026-07-01T00:00:00+08:00")])
 
 
+def c_truncated_text_is_not_complete():
+    b = case(
+        "truncated-text-is-not-complete",
+        "【豆瓣会截断超长广播，而档案不得把半截正文当成全文】\n"
+        "列表页对很长的广播只渲染到开头，末尾挂一个 <a>（全文）</a>。实测 804 条有正文\n"
+        "的广播里有 2 条这样。存下半截而不声明它是半截的，读者无从分辨——与「浏览计数\n"
+        "进正文」是同一类错：不报错，只是让档案说了假话。\n"
+        "\n"
+        "两条要求：\n"
+        "1 被截断的那条必须标出来（text_truncated），并记下全文在哪（full_text_url）。\n"
+        "2 【判据是结构不是文字】——第二条广播的正文是用户自己打的「（全文）」结尾，\n"
+        "  它没有那个 <a> 元素，不得被判成截断。给一条完整正文盖上「不完整」的戳，\n"
+        "  和漏判一样是在说假话。\n"
+        "另外「（全文）」是豆瓣的链接文字、不是用户写的字，不该留在正文里。",
+        {"broadcasts": 2, "truncated": 1},
+    )
+    page = [
+        {"sid": "5789764812", "at": "2025-04-14 18:47:50",
+         "text": '开头一段…<a href="https://www.douban.com/note/872015292/">（全文）</a>'},
+        {"sid": "5789764813", "at": "2025-04-14 18:48:00", "text": "我写完了（全文）"},
+    ]
+    make_bundle(b, "20260728T101500Z-b00001",
+                [(*BC, "ok", T1, broadcast_page(page))],
+                crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                enumeration="bounded",
+                                floor_time="2025-01-01T00:00:00+08:00")])
+
+
 def c_pagination_overlap_is_not_a_duplicate():
     b = case(
         "pagination-overlap-is-not-a-duplicate",
@@ -607,6 +635,7 @@ def main():
     c_unknown_verdict_is_not_ok()
     c_no_manifest_still_readable()
     c_broadcast_is_immutable()
+    c_truncated_text_is_not_complete()
     c_pagination_overlap_is_not_a_duplicate()
     c_reshared_is_not_mine()
     c_action_not_forced_into_status()
