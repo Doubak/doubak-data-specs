@@ -16,21 +16,19 @@
 - **[INGESTION.md](canonical/INGESTION.md)** —— 给一堆 bundle，哪些能读、读出来**能推出什么结论**
 - **[IDENTITY.md](canonical/IDENTITY.md)** —— 两次抓取之间怎么知道是同一条
 - **[FIELDS.md](canonical/FIELDS.md)** —— 能拿到什么，以及哪些**不该**在解析时拆
-- JSON Schema：`mark` / `subject` / `common`（广播与长文还没有，见下）
+- JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `common`
 - [一致性用例](canonical/tests/)：15 组，多数是**「解析器不得得出什么结论」**
 
+### 校验
+
 ```sh
+cd canonical/v1 && python3 validate.py <canonical 目录>   # 零依赖
 cd canonical/tests && python3 make-tests.py
 ```
 
-### 已知缺口：广播与长文还没有 schema
+对着真实档案 9279 行全部通过（标记 2940 · 作品 2940 · 广播 3394 · 长文 5）。
 
-解析器已经在产出这两类（实测 3394 条广播、5 篇长文），而 `canonical/v1/` 里只有
-`mark` 与 `subject`。这是**生产者跑到了规范前面**，与本仓库「先落规范再落生产者」
-的定位相反，记在这儿免得它被当成不存在。
-
-数据模型整体仍然刻意滞后于抓取——拿十五年没见过的豆瓣页面去设计 schema，
-只会得到一个碰上 2011 年的页面就碎掉的 schema。但这两类已经有真实数据可以对着量了。
+数据模型整体仍然刻意滞后于抓取——拿十五年没见过的豆瓣页面去设计 schema，只会得到一个碰上 2011 年的页面就碎掉的 schema。这四类是已经有真实数据可以对着量的部分。
 
 ## bundle
 

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/longform.schema.json",
+  "title": "doubak canonical v1 — 一篇长文（longform.ndjson 的一行）",
+  "description": "用户写的日记（note）或评论（review，即影评/书评/游戏评论）。\n\n【与广播相反：长文是可以编辑的】所以多条修订是正常现象，不是抽取器出问题。这一点决定了它与广播用同一套「记录 + 修订」骨架，但自检性质正好相反——广播多出一条修订要去看，长文多出一条修订是数据本身。\n\n【正文必须单独抓一遍】列表页上只有截断的摘要（`_short`），不是全文。拿摘要当正文存进 canonical，等于把一份残缺的东西冒充完整的——而源页面消失之后再也补不回来。\n\n【样本极少】本 schema 是对着 5 篇真实长文（3 篇日记 + 2 篇评论）写的。字段的【存在性】是可靠的（它们都来自明确的页面结构），但任何关于「哪种 kind 一定有哪个字段」的规律都【不可信】——见 rating 与 location 两条的说明。",
+
+  "type": "object",
+  "required": ["canonical_version", "kind", "identity_layer", "upstream_id", "account", "revisions"],
+  "additionalProperties": true,
+
+  "properties": {
+    "canonical_version": { "$ref": "common.schema.json#/$defs/canonical_version" },
+
+    "kind": {
+      "enum": ["note", "review"],
+      "description": "日记还是评论。【封闭词表】——它不来自页面，来自路线（`note.item` / `review.item`），所以永远可得且永远只有这两个值。\n\n与标记的 `status` 是同一个道理：来自路线的东西可以必填，来自页面的东西不可以。"
+    },
+
+    "identity_layer": {
+      "$ref": "common.schema.json#/$defs/identity_layer",
+      "description": "长文【没有退化层】：id 就在 URL 里，恒为 `upstream_id`。"
+    },
+
+    "upstream_id": {
+      "type": "string",
+      "description": "URL 里那个数字 id。\n\n【日记有两种 URL 形状并存】`/note/<id>/` 与 `/topic/<id>/`，同一个账号里两种都有——这不是豆瓣改版的先后，是同时存在的两种。实测踩过：只认一种会让另一种整批抽不到，而抽不到是【静默】的。"
+    },
+
+    "account": {
+      "type": "object",
+      "description": "档案主人。\n\n【日记页的侧栏里有别人的日记】实测某一页的侧栏挂着 6 篇他人日记。抽取器必须限定在正文容器内，否则会把第三方内容写进档案主人的 canonical。",
+      "required": ["user_id"],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": { "type": "string" },
+        "username": { "type": ["string", "null"] }
+      }
+    },
+
+    "url": { "type": ["string", "null"] },
+
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。【长文可编辑，所以多条修订是正常的】。\n\n实测 5 篇各被观测 5 次，仍然各只有 1 条修订——那说明抽取器是稳的，不说明长文不可编辑。\n\n【正文右端必须钉死】第一版没钉，溢出到页脚吞进了「1740人浏览」。那个数每次抓取都在涨，于是同一篇日记在三次抓取里产出了三条修订，看起来像用户在 24 小时内改了两次。这是这套系统最坏的一类错：【凭空捏造编辑历史，而且不报错】。同一类还有 `<script>` 里的前端资源哈希（`html5_video.48d02.js`），豆瓣重新发布一次前端它就变一次。",
+      "items": { "$ref": "#/$defs/revision" }
+    }
+  },
+
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": ["parser_version", "first_observed_at", "last_observed_at", "fields", "digests", "observations"],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": { "$ref": "common.schema.json#/$defs/parser_version" },
+        "first_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+        "last_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
+
+        "fields": {
+          "type": "object",
+          "description": "这一版的字段快照。来自页面的字段一个都不设必填。",
+          "additionalProperties": true,
+          "properties": {
+            "title": {
+              "type": ["string", "null"],
+              "description": "标题。\n\n评论的标题在 `v:summary` 里，【不是 h1 的直接文字】——h1 里还混着作品名。"
+            },
+            "published_at": {
+              "oneOf": [{ "$ref": "common.schema.json#/$defs/partial_date" }, { "type": "null" }],
+              "description": "发布时间，实测精度到【秒】。"
+            },
+            "body": {
+              "type": ["string", "null"],
+              "description": "正文全文，纯文本 + 内嵌图。\n\n【正文里内嵌的图转成 Markdown 的 `![](url)` 保留下来】剥成纯文本会让图彻底消失——字节明明已经抓进档案了，只是 canonical 里再没有任何东西指向它们，于是站点生成器也无从摆放。这一步是【保留】不是【解释】：URL 原样，不改尺寸、不换 CDN。\n\n【这意味着 body 是混合内容】用户写的字 + 解析器插入的图片标记。下游把它喂给 Markdown 渲染时，必须只转义前者——两者一起转义，图会变成一行字面文本。"
+            },
+            "rating": {
+              "type": ["integer", "null"],
+              "minimum": 1,
+              "maximum": 5,
+              "description": "评论给作品打的分。\n\n【实测 2 篇评论都有、3 篇日记都没有，但不要把它写成规则】n=5 完全不足以断言「日记一定没有评分」。这个项目已经因为「从手上的样本推出一个封闭集合」翻过四次车（广播附图的三种写法、日记的两种 URL、图片主机名、动作词表），所以这里只记录观测，不设约束。"
+            },
+            "subject_url": {
+              "type": ["string", "null"],
+              "description": "评论所评的那个作品。\n\n【取 `sameAs`，不取 `url`】页面上的 `url` 指向评论自己，`sameAs` 才指向作品。\n\n与 rating 同一条注意事项：实测只有评论有，但样本太少，不设约束。"
+            },
+            "location": {
+              "type": ["string", "null"],
+              "description": "发布地（豆瓣按 IP 显示的属地）。\n\n【这是用户的位置信息】下游往公开站点发布时值得单独想一想要不要带上——它比正文更容易被用来定位一个人，而它并不是用户主动写的。\n\n实测只在日记上见过，评论上是 null；同样是 n=5，不设约束。"
+            }
+          }
+        },
+
+        "digests": {
+          "type": "object",
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" },
+          "description": "逐字段摘要。【必须逐字段算】——否则改一次标题会让正文也看起来被重写过。"
+        },
+
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/observation" }
+        }
+      }
+    }
+  }
+}
