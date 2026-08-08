@@ -6,9 +6,31 @@
 | 目录 | 谁写 | 生命周期 | 状态 |
 |---|---|---|---|
 | [`bundle/`](bundle/) | 浏览器扩展 | 用户跑过一次就**冻结**（没法请人重爬） | [草案 v1.0](bundle/README.md) |
-| [`canonical/`](canonical/) | 解析器 | **随时可改**（重跑解析器不要钱） | [刻意留空](canonical/README.md) |
+| [`canonical/`](canonical/) | 解析器 | **随时可改**（重跑解析器不要钱） | [摄取规则 + 标记与作品的 schema](canonical/README.md) |
 
 把这两者当成同一个格式来设计，是本项目最主要的翻车方式。
+
+## canonical
+
+- **[canonical/README.md](canonical/README.md)** —— 这棵树的入口
+- **[INGESTION.md](canonical/INGESTION.md)** —— 给一堆 bundle，哪些能读、读出来**能推出什么结论**
+- **[IDENTITY.md](canonical/IDENTITY.md)** —— 两次抓取之间怎么知道是同一条
+- **[FIELDS.md](canonical/FIELDS.md)** —— 能拿到什么，以及哪些**不该**在解析时拆
+- JSON Schema：`mark` / `subject` / `common`（广播与长文还没有，见下）
+- [一致性用例](canonical/tests/)：15 组，多数是**「解析器不得得出什么结论」**
+
+```sh
+cd canonical/tests && python3 make-tests.py
+```
+
+### 已知缺口：广播与长文还没有 schema
+
+解析器已经在产出这两类（实测 3394 条广播、5 篇长文），而 `canonical/v1/` 里只有
+`mark` 与 `subject`。这是**生产者跑到了规范前面**，与本仓库「先落规范再落生产者」
+的定位相反，记在这儿免得它被当成不存在。
+
+数据模型整体仍然刻意滞后于抓取——拿十五年没见过的豆瓣页面去设计 schema，
+只会得到一个碰上 2011 年的页面就碎掉的 schema。但这两类已经有真实数据可以对着量了。
 
 ## bundle
 
