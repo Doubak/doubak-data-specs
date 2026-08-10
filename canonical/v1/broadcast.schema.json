@@ -3,69 +3,105 @@
   "$id": "https://spec.doubak.com/canonical/v1/broadcast.schema.json",
   "title": "doubak canonical v1 — 一条广播（broadcasts.ndjson 的一行）",
   "description": "用户发的一条广播。\n\n【广播与标记是两种东西，不要套用标记的直觉】\n\n| | 标记 | 广播 |\n|---|---|---|\n| 可编辑 | 可以——状态、评分、短评都会变 | 【不可以】，发布即冻结 |\n| 可删除 | 可以 | 可以，而且【不留痕迹】 |\n| 时间精度 | 只到天 | 【到秒】 |\n| 身份 | `data-cid`，半数历史档案里没有 | `data-sid`，实测 3394 条 100% 有 |\n\n「发布后不可编辑」是实测确认的，也是这条路线排在最优先的理由：每条广播都是「那一刻这句话是什么样」的带日期快照，而那是【首次抓取之前发生的编辑】唯一可能的证据来源。真实例子：某条标记的「想看」短评在标记页上已经被「看过」的短评覆盖了，而广播里还在，还带着秒级时间戳。\n\n【它同时也是最脆的】删除不留痕迹，所以没抓到就是永远没有——不像标记，标记删了至少还能从别的地方推。",
-
   "type": "object",
-  "required": ["canonical_version", "identity_layer", "upstream_id", "account", "revisions"],
+  "required": [
+    "canonical_version",
+    "identity_layer",
+    "upstream_id",
+    "account",
+    "revisions"
+  ],
   "additionalProperties": true,
-
   "properties": {
-    "canonical_version": { "$ref": "common.schema.json#/$defs/canonical_version" },
-
+    "canonical_version": {
+      "$ref": "common.schema.json#/$defs/canonical_version"
+    },
     "identity_layer": {
       "$ref": "common.schema.json#/$defs/identity_layer",
       "description": "广播【没有退化层】：`data-sid` 实测 100% 存在，所以恒为 `upstream_id`。\n\n这与标记相反——标记的 `data-cid` 在游戏与 2023-12 之前的档案里全无，必须退化到 (账号, 媒介, 作品) 三元组。"
     },
-
     "upstream_id": {
       "type": "string",
       "description": "`data-sid`，豆瓣自己的广播 id。【必填】，理由见 identity_layer。"
     },
-
     "account": {
       "type": "object",
       "description": "档案主人。\n\n【转发进来的不是自己的】转发别人的广播会把对方那条整个渲染在自己的时间线上，而 `data-uid` 是【原作者】。实测 3394 个 wrapper 里有 8 个是别人的，它们不该进档案主人的 canonical。抽取器必须逐条按 `data-uid` 过滤。",
-      "required": ["user_id"],
+      "required": [
+        "user_id"
+      ],
       "additionalProperties": true,
       "properties": {
-        "user_id": { "type": "string" },
-        "username": { "type": ["string", "null"] }
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
       }
     },
-
     "url": {
-      "type": ["string", "null"],
+      "type": [
+        "string",
+        "null"
+      ],
       "description": "`data-status-url`，指向豆瓣上这条广播。\n\n【它是外链，不是站点内部的链接】下游生成静态站时不得回退到它——那会让一份号称离线可看的档案为了一个链接去联网。"
     },
-
     "revisions": {
       "type": "array",
       "minItems": 1,
       "description": "按 `first_observed_at` 升序。\n\n【实测 3394 条记录对 3394 条修订，一比一】这不是巧合，是「发布即冻结」在数据上的样子，也是一条免费的自检：多出第二条修订【不是】用户改了广播，是抽取器或页面变了，值得去看。有 24 条被观测了不止一次，内容全都没变。\n\n【但不能写成 maxItems: 1】跨 `parser_version` 的修订本来就该并存（../INGESTION.md §4.4：只比较同一 parser_version 的修订）。修好一个抽取器 bug 之后重跑，产出第二条修订是正确行为。所以这是一条【应当检查的性质】，不是 schema 约束——同一 parser_version 内多于一条才是问题。",
-      "items": { "$ref": "#/$defs/revision" }
+      "items": {
+        "$ref": "#/$defs/revision"
+      }
     }
   },
-
   "$defs": {
     "revision": {
       "type": "object",
-      "required": ["parser_version", "first_observed_at", "last_observed_at", "fields", "digests", "observations"],
+      "required": [
+        "parser_version",
+        "first_observed_at",
+        "last_observed_at",
+        "fields",
+        "digests",
+        "observations"
+      ],
       "additionalProperties": true,
       "properties": {
-        "parser_version": { "$ref": "common.schema.json#/$defs/parser_version" },
-        "first_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
-        "last_observed_at": { "$ref": "common.schema.json#/$defs/timestamp" },
-
+        "parser_version": {
+          "$ref": "common.schema.json#/$defs/parser_version"
+        },
+        "first_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "last_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
         "fields": {
           "type": "object",
           "description": "这一版的字段快照。【与标记一样，来自页面的字段一个都不设必填】。",
           "additionalProperties": true,
           "properties": {
             "posted_at": {
-              "oneOf": [{ "$ref": "common.schema.json#/$defs/partial_date" }, { "type": "null" }],
+              "oneOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/partial_date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "发布时间，实测精度到【秒】。\n\n【比标记页的日期精确，合并时不得用低精度覆盖它】同一件事在标记页上只有天。这也是广播值钱的地方之一：它给标记的状态迁移钉上了秒级的时间戳。"
             },
             "text": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "正文，原样保留（只剥标签）。\n\n【多数广播没有正文】实测 3394 条里只有 804 条有（23.7%），其余是纯标记动作。所以 null 是常态，不是抽取失败。\n\n【被截断时这里存的是开头，不是全文】见 text_truncated。豆瓣那个「（全文）」是链接文字、不是用户写的字，所以【不进正文】——与「未知作品」「1740人浏览」「暂无封面」同一条规则：占位符不是内容。"
             },
             "text_truncated": {
@@ -74,43 +110,75 @@
               "description": "豆瓣把这条广播的正文截断了，`text` 里只有开头。\n\n【没有这个字段，档案就在说假话】存着半截正文而不声明它是半截的，读者无从分辨——与「浏览计数进正文」是同一类错：不报错，只是让档案说了假话。实测 804 条有正文的广播里 2 条这样（0.2%）。\n\n【判据是结构，不是文字】认的是 blockquote 末尾那个 `<a href=\"…\">（全文）</a>` 元素，不是「正文以（全文）三个字结尾」。后者会把一条用户自己打了「（全文）」结尾的广播误判成截断，而给一条完整正文盖上「不完整」的戳，和漏判一样是在说假话。"
             },
             "full_text_url": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "被截断时，全文在哪。\n\n【实测它指向的东西通常已经在档案里了】那两条的 href 都指向一篇日记，而两篇日记的全文早就抓下来了（longform.ndjson 里的 872015292 与 868128497）。\n\n所以这不是「档案缺了数据」，是「档案缺了一个指针」——全文一直都在，只是没有任何东西说这条广播的正文是它的开头。下游应当优先把它接回本地的长文记录，接不上再考虑别的。"
             },
             "action": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "动作原文（想看 / 看过 / 收藏图书到豆列 / 转发 / …），【开放词表，原样存】。\n\n实测分布：想看 1215 · 看过 1063 · 想玩 290 · 玩过 221 · 在看 194 · 在玩 106 · 想读 / 读过 / 听过 / 在读若干 · 收藏 X 到豆列 61 · 转发 24。"
             },
             "status": {
-              "oneOf": [{ "$ref": "common.schema.json#/$defs/status" }, { "type": "null" }],
+              "oneOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/status"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "description": "动作能明确映射到三种标记状态时才有，【否则必须是 null】。\n\n实测 wish 1577 · done 1343 · doing 320 · 【null 154】。那 154 条是「收藏图书到豆列」「转发」「说」这类——它们【不是标记状态】，硬塞进 wish/doing/done 任何一格都是编造。\n\n这是与标记 schema 的关键差别：标记的 status 必填（它来自路线，永远可得），广播的 status 可为空（它是从动作词【推】出来的）。"
             },
+            "rating": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 1,
+              "maximum": 5,
+              "description": "发这条广播时给的星数（1–5），没打分就是 null。实测 3401 条广播里 1447 条带评分（43%）。\n\n【它与标记的评分不是一回事，这正是它值钱的地方】标记页只留【最新】那个分——改一次覆盖一次，豆瓣不留历史。而广播发布即冻结，所以这个数字是「那一天我给了几颗星」。\n\n换句话说：把同一部作品的几条广播按时间排开，就得到一份【豆瓣自己都没有】的评分变化史。档案能留住来源留不住的东西，这是其中一处。\n\n【取自 blockquote 里的 `<span class=\"rating-stars\">`】它在正文 `<p>` 的外面。这一点上栽过一次：抽取正文的正则要求 `<blockquote>` 后面紧跟 `<p>`，而评分星恰好夹在中间，于是【凡是打了分的广播，正文一律抽不到】——2200 条里漏了 1411 条，且漏掉的每一条都带评分。星数本身当时也一并丢了。\n\n【数星星，不要解析文案】页面上是 `★★★★★` 这样的实体字符，不是数字。"
+            },
             "target_type": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "`data-target-type`。\n\n【这不是 medium，不要引用 common#/$defs/medium】实测取值：movie 2475 · game 618 · book 128 · 【doulist 61】 · 【sns 32】 · 【ilmen 25】 · music 23 · null 8。doulist（豆列）与 sns 不是媒介；ilmen 是豆瓣游戏后端的内部名。把它当媒介用，下游会拿一个豆列去查作品表。\n\n开放词表：遇到不认识的取值原样保留。"
             },
             "target_id": {
-              "type": ["string", "null"],
+              "type": [
+                "string",
+                "null"
+              ],
               "description": "`data-object-id`。作品类广播上它就是作品 id，可以接回标记。\n\n【但它不带媒介】所以按 id 接回作品时【撞车就不许接】——不同媒介各自编号，理论上会撞。接错了比接不上严重得多：接不上只是少个链接，接错了是档案在说假话，而且看不出来。\n\n实测 22 条没有（转发、纯文字广播）。"
             },
             "images": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "附图【原件】的 URL，指向 doubanio。\n\n【空数组不是 null】广播页整个抓到了，就等于看清了「这条有没有图」——那与「没抽到」是两回事。null 会让下游分不清「确认没有」和「没看过」。实测 3394 条里 29 条有图，共 124 张。\n\n【抽取端与解析端对「哪些图算数」的判据必须逐字一致】不一致的后果是不对称的、而且都很难发现：解析端更松，canonical 里会出现抓取端从没取过的 URL（站点上是死链）；更严，则字节明明在档案里而 canonical 不提它，等于悄悄丢图。有一条测试直接断言两个集合相等。\n\n【不要按主机名收窄】实测第一版写成 `img\\d*\\.doubanio\\.com` 就漏了 `qnmob3.doubanio.com`——同一批广播里的另一个图片主机。\n\n只存本人上传的：转发进来的图属于原作者，按 `data-uid` 过滤掉（实测 30 张）。"
             }
           }
         },
-
         "digests": {
           "type": "object",
           "description": "逐字段摘要，键与 `fields` 对应。规则与标记相同：NFC、去尾部空白、统一换行，【绝不折叠简繁与大小写】。",
-          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" }
+          "additionalProperties": {
+            "$ref": "common.schema.json#/$defs/digest"
+          }
         },
-
         "observations": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "common.schema.json#/$defs/observation" },
+          "items": {
+            "$ref": "common.schema.json#/$defs/observation"
+          },
           "description": "所有看到过这一版的捕获。\n\n【广播的 absence_authority 尤其不能大意】广播列表是头插的，增量抓取只看下界以上，所以一次增量【不足以】断言任何一条广播被删了。而广播的删除本来就不留痕迹——把「这次没看见」当成「被删了」，会把一条从未被看见的记录说成用户删掉的。"
         }
       }

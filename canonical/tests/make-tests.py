@@ -450,7 +450,16 @@ def broadcast_page(items, owner="82160871"):
     out = []
     for it in items:
         uid = it.get("uid", owner)
-        quote = f'<blockquote><p>{it["text"]}</p></blockquote>' if it.get("text") else ""
+        # 评分星在 blockquote 里、正文 <p> 的【外面】——真实页面就是这个形状，
+        # 而它正是「打了分的广播抽不到正文」那个 bug 的成因。
+        stars = (
+            f'<span class="rating-stars">{"&#9733;" * it["rating"]}</span>'
+            if it.get("rating") else ""
+        )
+        quote = (
+            f"<blockquote>{stars}<p>{it['text']}</p></blockquote>"
+            if it.get("text") or stars else ""
+        )
         out.append(
             f'<div class="new-status status-wrapper" data-sid="{it["sid"]}" data-uid="{uid}">'
             f'<a class="lnk-people">MewX</a> {it.get("action", "想看")}'
@@ -505,6 +514,49 @@ def c_broadcast_is_immutable():
                     crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
                                     enumeration="bounded",
                                     floor_time="2026-07-01T00:00:00+08:00")])
+
+
+def c_rating_stars_are_not_a_wall():
+    b = case(
+        "rating-stars-are-not-a-wall",
+        "【评分星夹在 blockquote 与正文之间，不得因此漏掉正文】\n"
+        "带评分的广播，页面结构是：\n"
+        "\n"
+        "    <blockquote>\n"
+        "      <span class=\"rating-stars\">★★★★★</span>\n"
+        "      <p>正文</p>\n"
+        "    </blockquote>\n"
+        "\n"
+        "一个天真的实现会写「<blockquote> 后面紧跟 <p>」，于是【凡是打了分的广播，\n"
+        "正文一律抽不到】。实测这正是发生过的：2200 条有正文的广播漏掉 1411 条，\n"
+        "而漏掉的每一条都带评分——不是零星漏网，是一整类。\n"
+        "\n"
+        "它【不会报错】：text=null 与「这条本来就没写字」长得一模一样，而后者本来就\n"
+        "占多数（纯标记动作），所以连数字上都看不出异常。是从生成的页面上肉眼发现的。\n"
+        "\n"
+        "三条要求：\n"
+        "1 两条广播的正文都要抽到（一条带评分、一条不带）。\n"
+        "2 星数要留下来：广播【发布即冻结】，所以它是「那一天我给了几颗星」，\n"
+        "  而标记页只留最新那个分。把同一部作品的几条广播排开，就是一份豆瓣\n"
+        "  自己都没有的评分变化史。\n"
+        "3 没打分的那条 rating 必须是 null，不得填 0——0 星和没打分是两件事。",
+        {
+            "broadcasts": 2,
+            "broadcast_revisions": 2,
+            "broadcast_ratings": [4],
+            "broadcast_text_contains": "打了分也要看得见正文",
+        },
+    )
+    page = [
+        {"sid": "9500000001", "at": "2026-07-18 12:44:56",
+         "text": "打了分也要看得见正文", "rating": 4, "action": "看过"},
+        {"sid": "9500000002", "at": "2026-07-18 13:00:00",
+         "text": "没打分的这条本来就抽得到", "action": "想看"},
+    ]
+    make_bundle(b, "20260728T101500Z-b00001", [(*BC, "ok", T1, broadcast_page(page))],
+                crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline",
+                                enumeration="bounded",
+                                floor_time="2026-07-01T00:00:00+08:00")])
 
 
 def c_truncated_text_is_not_complete():
@@ -635,6 +687,7 @@ def main():
     c_unknown_verdict_is_not_ok()
     c_no_manifest_still_readable()
     c_broadcast_is_immutable()
+    c_rating_stars_are_not_a_wall()
     c_truncated_text_is_not_complete()
     c_pagination_overlap_is_not_a_duplicate()
     c_reshared_is_not_mine()
