@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/doulist.schema.json",
+  "title": "doubak canonical v1 — 一个豆列（doulist.ndjson 的一行）",
+  "description": "用户编的一份清单：标题、简介、成员、次序，以及**逐条的评语**。\n\n【为什么值得单独建一个类型】列表本身只是一堆链接，可替代；真正不可替代的是挂在每条上的 `comment`（页面上写作「评语：」）。实测一个真实账号的三份豆列：24/25、9/15、9/12 条带评语，其中一份是带价格和购买渠道的游戏消费流水（「A$49.21 amazon上买了35USD的充值卡…」）。这类文字豆瓣不导出，也不能从档案里任何别处推出来。\n\n【与「收藏夹」相反的那一种也存在】同一个账号里另有一份 25 条、**0 条评语**、每条都指向他人 `/review/` 的豆列——那是个纯书签夹。两种形态共用这个 schema，靠 `comment` 是否为空自然区分，不需要另立类型。\n\n【条目的目标页不抓】`items[].url` 指向的作品页/评论页**不在档案里**，这是有意的：豆列页自身已经带了标题、简介、评分与封面（都来自 `data-*` 属性），渲染不需要目标页；而跟进去抓会把大量第三方内容拖进档案。所以 `items[].url` 是一个**外部指针**，不保证可解析。\n\n【样本】本 schema 对着 5 份真实豆列写成（3 份带评语的自建、1 份纯书签、1 份私密）。样本少，所以任何「某类豆列一定有某字段」的规律都不可信。",
+
+  "type": "object",
+  "required": ["canonical_version", "identity_layer", "upstream_id", "account", "ownership", "revisions"],
+  "additionalProperties": true,
+
+  "properties": {
+    "canonical_version": { "$ref": "common.schema.json#/$defs/canonical_version" },
+
+    "identity_layer": {
+      "$ref": "common.schema.json#/$defs/identity_layer",
+      "description": "豆列【没有退化层】：id 就在 URL 里（`/doulist/<id>/`），恒为 `upstream_id`。"
+    },
+
+    "upstream_id": {
+      "type": "string",
+      "description": "URL 里那个数字 id。"
+    },
+
+    "account": {
+      "type": "object",
+      "description": "档案主人。\n\n【注意这不一定是豆列的作者】`ownership` 为 `followed` 时，豆列是别人编的，而这一行仍然属于档案主人的档案——它记录的是「我关注了这一份」这个事实。作者写在 `owner` 里。",
+      "required": ["user_id"],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": { "type": "string" },
+        "username": { "type": ["string", "null"] }
+      }
+    },
+
+    "ownership": {
+      "enum": ["created", "followed"],
+      "description": "自己编的，还是关注别人的。\n\n【封闭词表，且来自路线而非页面】取自 intent 的 ownership 组件（`doulist.list.created` / `doulist.list.followed`），所以永远可得。与长文的 `kind` 同一个道理：来自路线的东西可以必填，来自页面的不可以。\n\n**这两类不能合并**：created 的每一个字都是你写的，followed 只是一个指向他人内容的书签。"
+    },
+
+    "owner": {
+      "type": ["object", "null"],
+      "description": "豆列的作者。`ownership` 为 `created` 时就是档案主人自己；为 `followed` 时是第三方——**发布路径要据此过滤**。为 null 表示页面上没读到，不表示无主。",
+      "additionalProperties": true,
+      "properties": {
+        "user_id": { "type": ["string", "null"] },
+        "username": { "type": ["string", "null"] }
+      }
+    },
+
+    "url": { "type": ["string", "null"] },
+
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。\n\n【豆列可编辑】改标题、改简介、加减条目、改评语都会产生新修订，这是数据本身，不是抽取器出问题——与长文同类，与广播相反。\n\n【逐字段摘要，不要整份摘要】一份豆列里加了一条新条目，与把某条的评语重写了一遍，是两件性质完全不同的事。合成一个整体摘要就再也分不出来了。",
+      "items": { "$ref": "#/$defs/revision" }
+    }
+  },
+
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": ["parser_version", "capture_ids", "first_observed_at"],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": { "$ref": "common.schema.json#/$defs/parser_version" },
+        "capture_ids": { "$ref": "common.schema.json#/$defs/capture_ids" },
+        "first_observed_at": { "$ref": "common.schema.json#/$defs/observed_at" },
+        "last_observed_at": { "$ref": "common.schema.json#/$defs/observed_at" },
+
+        "title": { "type": ["string", "null"] },
+        "description": {
+          "type": ["string", "null"],
+          "description": "豆列自己的简介（页面上的 `doulist-about`）。用户写的，要按用户文本对待——发布时必须转义。"
+        },
+        "tags": {
+          "type": ["array", "null"],
+          "items": { "type": "string" },
+          "description": "null 表示没读到，`[]` 表示读到了但一个都没有。两者必须分开。"
+        },
+
+        "visibility": {
+          "enum": ["public", "private", "unknown"],
+          "description": "公开还是仅自己可见。\n\n【三个取值，不是两个】判据是详情页 `<h1>` 里的 `<i class=\"is-private\">`：在 → private，不在 → public，**连 `<h1>` 都没找到 → unknown**。把「抽取失败」和「公开」合成一个值，等于在豆瓣改版那天把所有私密豆列静默变成公开——这是这套系统里最不能犯的一类错，因为用户已经明确表达过「不公开」。\n\n【判据必须限定在 `<h1>` 内】索引页上也有同名的 `is-private`（在 `<h3>` 里），而**索引页那个不可靠**（档案主人实测所报，本项目未复现其失效方式）。不限定容器就会读到不可靠的那一个。\n\n【unknown 按 private 处理】发布路径上宁可漏发一份公开豆列（用户看得见、可以改），也不能误发一份私密豆列（不可撤回）。",
+          "default": "unknown"
+        },
+
+        "item_count_claimed": {
+          "type": ["integer", "null"],
+          "description": "豆瓣自己声称的条目数。\n\n【详情页实测不写这个数】5 份样本里一个都没有。留这个字段是因为索引页上有（「N人关注」旁边），将来若从索引页补进来可以放这儿。与规范其余部分同理：声称数只能用来【反驳】荒谬的完整性主张，不能用来【授予】完整性。"
+        },
+
+        "items": {
+          "type": ["array", "null"],
+          "description": "豆列里的条目，按页面次序。\n\n【次序是内容的一部分】用户排过序的清单，重排等于改内容。\n\nnull 表示这一版没读到条目区（抽取失败），`[]` 表示读到了、里面确实是空的——实测有一份私密豆列只有 1 条，空豆列也完全可能存在。",
+          "items": { "$ref": "#/$defs/item" }
+        }
+      }
+    },
+
+    "item": {
+      "type": "object",
+      "description": "豆列里的一条。字段几乎全部来自 `a.lnk-doulist-add` 上的 `data-*` 属性——那是页面上最稳的一处抽取面，比渲染出来的标题块稳得多。",
+      "required": ["upstream_id"],
+      "additionalProperties": true,
+      "properties": {
+        "upstream_id": {
+          "type": "string",
+          "description": "目标对象的 id（`data-id`）。**不是豆列条目自身的 id**——后者在容器的 `id` 属性上（形如 `id=\"770340559\"`），是这条「收藏动作」的 id。两者都有用，别搞混。"
+        },
+        "entry_id": {
+          "type": ["string", "null"],
+          "description": "这条收藏动作自身的 id（容器 `id` 属性）。同一个作品可以出现在多份豆列里，`entry_id` 才是这一条的身份。"
+        },
+        "category": {
+          "type": ["string", "null"],
+          "description": "豆瓣的内容类型码（`data-cate`）。**开放词表，原样保留数字字符串，不要翻译。** 实测出现过 1001（书）、3114（游戏）、1012（他人的评论）；tofu 另见 3055（广播）。\n\n把它映射成 `medium` 是错的：豆列里装得下作品之外的东西（评论、广播、日记），而 `medium` 描述的是作品。"
+        },
+        "url": {
+          "type": ["string", "null"],
+          "description": "目标页 URL（`data-url`）。\n\n【这是一个外部指针，目标页不在档案里】豆列条目的目标不跟进去抓，理由见顶部说明。渲染时它是一个站外链接，不是站内链接。"
+        },
+        "title": { "type": ["string", "null"] },
+        "cover_url": {
+          "type": ["string", "null"],
+          "description": "封面图 URL（`data-picture`）。**图片本身不一定在档案里**——豆列条目的封面属目录数据，是否抓取由采集端决定。"
+        },
+        "abstract": {
+          "type": ["string", "null"],
+          "description": "豆瓣写的条目简介。**这是目录数据，不是用户写的**，与 `comment` 必须分开。"
+        },
+        "rating": {
+          "type": ["string", "null"],
+          "description": "豆瓣的评分文本（如「8.4 (15245人评价)」）。目录数据，且是**会变的**——原样存字符串，不解析成数字，也不要用它算摘要，否则豆瓣评分一动就凭空多一条修订。"
+        },
+        "comment": {
+          "type": ["string", "null"],
+          "description": "**用户自己写的评语**，页面上作「评语：」（`blockquote.comment`）。\n\n【这是整条路线存在的理由】其余字段几乎都是豆瓣的目录数据，只有这一个是你写的。实测三份自建豆列 24/25、9/15、9/12 条带评语。\n\nnull 表示这一条没写评语（很常见），不是抽取失败。"
+        },
+        "source": {
+          "type": ["string", "null"],
+          "description": "「来自：豆瓣」那一行。"
+        }
+      }
+    }
+  }
+}

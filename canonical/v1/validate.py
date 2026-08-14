@@ -31,6 +31,7 @@ FILES = {
     "subjects.ndjson": "subject.schema.json",
     "broadcasts.ndjson": "broadcast.schema.json",
     "longform.ndjson": "longform.schema.json",
+    "doulists.ndjson": "doulist.schema.json",
 }
 
 _cache: dict[str, dict] = {}

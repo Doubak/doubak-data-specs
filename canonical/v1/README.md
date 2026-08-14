@@ -1,11 +1,16 @@
 # canonical/v1 —— 解析器的产出格式
 
-**状态：草案，`canonical/1.0`。** 只覆盖**标记**与**作品**两类，那是目前唯一被真实数据量透的部分。广播、日记、评论沿用同一套「记录 + 修订」骨架，随后补上。
+**状态：草案，`canonical/1.0`。** 五类记录，共用同一套「记录 + 修订」骨架。
 
 ```
 marks.ndjson       一行一条标记（用户写的）      mark.schema.json
 subjects.ndjson    一行一个作品（目录数据）      subject.schema.json
+broadcasts.ndjson  一行一条广播（用户写的）      broadcast.schema.json
+longform.ndjson    一行一篇日记/评论（用户写的） longform.schema.json
+doulists.ndjson    一行一个豆列（用户编的）      doulist.schema.json
 ```
+
+**豆列这一类的样本最少（5 份），所以它的字段【存在性】可信，「哪类豆列一定有哪个字段」的规律不可信。** 它值得单独成类的理由只有一个：每个条目上挂着用户自己写的**评语**，而那是豆瓣不导出、也无法从档案别处推出来的东西。
 
 设计依据在上一层三份文档里，此处不重复：
 [INGESTION.md](../INGESTION.md)（哪些档案能读、能推出什么）、
