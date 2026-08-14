@@ -28,7 +28,7 @@
     "medium": {
       "type": "string",
       "examples": ["movie", "tv", "book", "music", "game", "podcast", "performance"],
-      "description": "媒介。【开放词表】——照抄 NeoDB 的取值（book / movie / tv / music / game / podcast / performance），因为对接迟早要做，没理由自造一套。\n\n但保持开放：豆瓣有「舞台剧」（映到 performance）与「移动应用」（NeoDB 没有对应），而豆瓣自己也会增删板块。读者遇到不认识的取值必须原样保留，不得猜测、不得丢弃。"
+      "description": "媒介。【开放词表】——照抄 NeoDB 的取值（book / movie / tv / music / game / podcast / performance），因为对接迟早要做，没理由自造一套。\n\n但保持开放：豆瓣有「舞台剧」（映到 performance）与「移动应用」（NeoDB 没有对应），而豆瓣自己也会增删板块。读者遇到不认识的取值必须原样保留，不得猜测、不得丢弃。\n\n「豆瓣会增删板块」不是假想：**移动应用（app）那个板块已经被豆瓣废弃**（2026-08-14 实测，作品详情页全部 404），采集端因此不再抓它。但 app 作为取值**不会被移除**——更早的档案里可能真有 app 标记，而删掉一个取值会让那些档案突然变得不合法。这正是开放词表的意义：取值只增不删。"
     },
 
     "status": {

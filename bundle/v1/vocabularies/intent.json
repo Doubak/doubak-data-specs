@@ -60,9 +60,9 @@
       "neodb_aligned": ["book", "movie", "tv", "music", "game", "podcast", "performance"],
       "douban_native": {
         "drama": "舞台剧。映射到 NeoDB 的 performance",
-        "app": "移动应用。NeoDB 无对应类型，保持豆瓣原样"
+        "app": "移动应用。NeoDB 无对应类型，保持豆瓣原样。**豆瓣已废弃这个板块**（2026-08-14 实测：标记列表页仍打得开，作品详情页全部 404），doubak-extension 因此明确不抓它。但这个取值**留在词表里**：bundle 词表是冻结的，而且更早的档案里可能真有 app 标记，读取方遇到它必须照常处理。爬虫不抓，与格式不认，是两件事"
       },
-      "note": "豆瓣侧目前实际出现的是 movie / book / music / game / drama / app。"
+      "note": "豆瓣侧实际出现过的是 movie / book / music / game / drama / app。其中 app 所在的板块已被豆瓣废弃（见上），新档案里不会再出现，旧档案里可能有。"
     },
 
     "status": {
