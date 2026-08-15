@@ -460,6 +460,57 @@ def case_valid_unknown_verdict() -> None:
     )
 
 
+def case_valid_from_the_future() -> None:
+    """一份「来自未来」的档案：更高的小版本 + 今天还不认识的字段与取值。
+
+    ## 为什么需要它
+
+    规范 §10 写着两条读者义务：容忍未知字段、原样保留开放词表里的未知取值。
+    但**在此之前没有任何东西验证过它们**——一致性用例验的都是「写出来的东西合不合
+    规范」，那是生产者方向；读者方向一条都没有。
+
+    `bundle/1.0` 从未公开发布过，所以对它不兼容是可以接受的。真正必须守住的是反过来
+    那一半：**今天写好的读取端，将来遇到更新的档案不能崩、不能静默丢东西。**
+    这一条今天就能验，不必等到真有 1.3。
+
+    ## 这里放什么、不放什么
+
+    放：更高的小版本号、manifest 与 index 行上的未知字段、开放词表（intent、
+    route_key）里的未知取值。这些**校验器必须放行**——放不行就说明 schema 把「只增
+    不改」写死了，而那正是 §10 要避免的。
+
+    不放：封闭词表（verdict、surface、capture_fidelity）的未知取值。那种情况按 §10
+    是小版本变更，**旧校验器拒绝它是刻意的**，所以它不属于 valid 用例。读者对那一类
+    的义务是「保守处置」（不得当成 ok），由各实现自己的测试覆盖。
+    """
+    d = fresh(
+        "valid",
+        "from-the-future",
+        "应通过：来自未来的档案。更高的小版本号、未知字段、开放词表里的未知取值。\n"
+        "规范 §10 要求读者容忍未知字段、并原样保留开放词表的未知取值——这一条验的正是它。\n"
+        "校验器若拒绝本例，说明 schema 把「只增不改」写死了，那是 schema 的问题。",
+    )
+    m = load_manifest(d)
+    # 一个我们今天不认识的小版本。pattern 是 ^bundle/1\.[0-9]+$，所以它合法。
+    m["spec_version"] = "bundle/1.9"
+    # 未来版本新增的可选字段。读者必须忽略它，重写时不得丢弃。
+    m["future_top_level_field"] = {"note": "1.9 新增的东西，今天的读者不认识"}
+    save_manifest(d, m)
+
+    lines = index_lines(d)
+    # 开放词表：未知取值必须原样保留，不得猜测、不得丢弃。
+    lines[1]["intent"] = "future.route.that.does.not.exist.yet"
+    lines[1]["route_key"] = "future.route"
+    lines[1]["future_line_field"] = 42
+    save_index(d, lines)
+
+    readme = d / "README.txt"
+    readme.write_text(
+        readme.read_text(encoding="utf-8").replace("bundle/1.0", "bundle/1.9"),
+        encoding="utf-8",
+    )
+
+
 def main() -> None:
     if not EXAMPLE.exists():
         raise SystemExit("请先运行 examples/make-minimal-bundle.py")
@@ -467,6 +518,7 @@ def main() -> None:
         (HERE / kind).mkdir(parents=True, exist_ok=True)
     case_valid_with_holes()
     case_valid_asset_capture()
+    case_valid_from_the_future()
     case_valid_cross_bundle_parent()
     case_valid_unknown_verdict()
     case_advanced_without_contiguity()
