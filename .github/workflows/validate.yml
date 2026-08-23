@@ -38,3 +38,34 @@ jobs:
             git diff --stat
             exit 1
           fi
+
+      # coveralls.mjs 是 JS —— runner 自带 node，不需要 setup-node。
+      # 这个仓库没有 npm，所以脚本和它的测试都放在 tools/ 下。
+      - name: 上报脚本自己的测试
+        run: node --test tools/coveralls.test.mjs
+
+      # 覆盖率上传：curl 打 Coveralls 的 /jobs 端点，用 repo token 认证。
+      # **不引 coverallsapp/github-action**——它只认 github-token，还要把
+      # @coveralls 以 Role: Write 请进仓库。
+      #
+      # 只在 push 上跑：fork 的 PR 拿不到 secrets，脚本会硬失败（故意不静默跳过）。
+      #
+      # --source 而不是 --include：**coverage.py 会把 --source 里从没被执行过的
+      # 文件按 0% 报出来**，而 --include 会让它们干脆不出现。这一条正是这个仓库
+      # 需要的——`canonical/v1/validate.py` 今天没有任何 CI 步骤会执行它（它只
+      # 接受一个 canonical 目录，而真实 canonical 是私人数据），所以它就该显示成
+      # 0%，而不是从分母里消失。总数因此是 52% 而不是 77%，低的那个才是真的。
+      #
+      # 生成器（tests/、examples/ 下的 make-*.py）用 --omit 排掉：它们是造夹具的
+      # 脚本，CI 跑它们只为比对字节是否一致，算进覆盖率只会把总数抬高而不说明什么。
+      - name: 覆盖率 → Coveralls
+        if: github.event_name == 'push'
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        run: |
+          pip install coverage
+          python3 -m coverage run --source=bundle/v1,canonical/v1 \
+            --omit='*/tests/*,*/examples/*' \
+            bundle/v1/validate.py --tests
+          python3 -m coverage lcov -o lcov.info
+          node tools/coveralls.mjs lcov.info

@@ -1,6 +1,6 @@
 # doubak-specs
 
-[![validate](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml?query=branch%3Amain)
+[![validate](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml?query=branch%3Amain) [![Coverage Status](https://coveralls.io/repos/github/Doubak/doubak-data-specs/badge.svg?branch=main)](https://coveralls.io/github/Doubak/doubak-data-specs?branch=main)
 
 > **这是源码仓库。** 项目主页在 **<https://doubak.com>**。
 
