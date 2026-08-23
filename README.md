@@ -1,5 +1,7 @@
 # doubak-specs
 
+[![validate](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml/badge.svg?branch=main)](https://github.com/Doubak/doubak-data-specs/actions/workflows/validate.yml?query=branch%3Amain)
+
 > **这是源码仓库。** 项目主页在 **<https://doubak.com>**。
 
 豆备 (Doubak) 的数据格式定义。从豆瓣 (Douban.com) 上备份下来的数据会存储为这个项目里所约定的格式。
