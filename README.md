@@ -22,7 +22,7 @@
 - **[IDENTITY.md](canonical/IDENTITY.md)** —— 两次抓取之间怎么知道是同一条
 - **[FIELDS.md](canonical/FIELDS.md)** —— 能拿到什么，以及哪些**不该**在解析时拆
 - JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `common`
-- [一致性用例](canonical/tests/)：15 组，多数是**「解析器不得得出什么结论」**
+- [一致性用例](canonical/tests/)：17 组，多数是**「解析器不得得出什么结论」**
 
 ### 校验
 

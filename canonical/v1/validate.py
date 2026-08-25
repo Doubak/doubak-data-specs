@@ -145,12 +145,21 @@ def main() -> int:
         return 0
 
     root = pathlib.Path(args[0])
+    # **目录不存在也「全部通过」，是这个校验器能犯的最坏的错。** 打错一个路径就拿到
+    # 一句绿灯，而它检查的东西一行都没读到。同理，目录在、但一个 canonical 文件都
+    # 没有，也不是通过——那是「你指错地方了」，不是「你的数据没问题」。
+    if not root.is_dir():
+        print(f"[错] {root} 不是一个目录", file=sys.stderr)
+        return 2
+
     failed = 0
+    seen_any = False
     for fname, sname in FILES.items():
         path = root / fname
         if not path.exists():
             print(f"[跳过] {fname} 不存在")
             continue
+        seen_any = True
         schema = load(sname)
         n = bad = 0
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -168,6 +177,11 @@ def main() -> int:
         failed += bad
         mark = "OK" if bad == 0 else "FAIL"
         print(f"[{mark}] {fname}: {n} 行，不合规 {bad}  ({sname})")
+
+    if not seen_any:
+        print(f"\n[错] {root} 里一个 canonical 文件都没有（找的是 "
+              f"{'、'.join(FILES)}）。没有东西可校验不等于校验通过。", file=sys.stderr)
+        return 2
 
     if unknown:
         # 校验器不认识的关键字 = 它其实没在检查那一条。必须说出来。
