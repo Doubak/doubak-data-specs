@@ -53,9 +53,12 @@ v1/
 cd v1
 python3 validate.py examples/minimal-bundle
 python3 validate.py --tests
+python3 validate.py --integrity-only <bundle 目录>   # 只把「字节坏了」当失败
 ```
 
 结构性检查无需任何依赖；装了 `jsonschema` 与 `referencing` 后会额外跑 schema 层校验。
+
+**错误分完整性与合规性两类**，退出码分别是 `2` 与 `1`（干净是 `0`）。理由见 SPEC §12.1：bundle 是冻结的，所以合规性错误里有一部分永远修不掉，混在一起会让这个校验器变成没人跑的东西。
 
 例子里的偏移量与摘要都是**实算**的，不是手写的——`examples/make-minimal-bundle.py` 会真的构造出 WARC 记录，校验器也会真的到偏移量处去解压验证。
 

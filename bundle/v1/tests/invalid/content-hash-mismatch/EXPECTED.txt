@@ -1,0 +1,8 @@
+应报错（完整性）：index 行的 content_sha256 与该 offset 处的正文不符。
+这一条模拟的是【自洽的生产者 bug】：段文件没动、manifest 里的 index
+sha256 已经改成与篡改后的索引一致，所以段哈希、gzip 的 CRC、行数
+全都对得上。在加这条检查之前，这份 bundle 会被判为完全合格。
+
+它比 bad-offset 窄：偏移量错位由 warc_record_id 那一条抓，位腐坏由
+gzip 自己的 CRC 抓。剩给它的是「记录 id 对得上、gzip 也解得开，但
+正文不是当初摘要的那一段」——写字节与算哈希这两步之间出的岔子。

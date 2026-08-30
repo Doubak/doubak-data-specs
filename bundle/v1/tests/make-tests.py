@@ -379,6 +379,9 @@ def case_empty_payload_ok() -> None:
         "invalid",
         "empty-payload-marked-ok",
         "应报错：载荷零长度却记为 verdict=ok（SPEC §6.5.2）。\n"
+        "（这份夹具是把 content_sha256 改成空串的哈希、正文原样留着造出来的，\n"
+        " 所以现在还会额外报一条 content_sha256 不符——同一句谎被两条检查\n"
+        " 分别看见，不是两个毛病。）\n"
         "真实旧档案里出现过 7 个零字节文件，与一次会话失效同批产生，"
         "文件名齐全地躺在目录里，磁盘上没有任何东西表明抓取失败过——"
         "下游只会看到「文件在」。空响应必须如实判定。",
@@ -390,6 +393,27 @@ def case_empty_payload_ok() -> None:
     )
     lines[0]["verdict"] = "ok"
     save_index(d, lines)
+
+
+def case_content_hash_mismatch() -> None:
+    d = fresh(
+        "invalid",
+        "content-hash-mismatch",
+        "应报错（完整性）：index 行的 content_sha256 与该 offset 处的正文不符。\n"
+        "这一条模拟的是【自洽的生产者 bug】：段文件没动、manifest 里的 index\n"
+        "sha256 已经改成与篡改后的索引一致，所以段哈希、gzip 的 CRC、行数\n"
+        "全都对得上。在加这条检查之前，这份 bundle 会被判为完全合格。\n"
+        "\n"
+        "它比 bad-offset 窄：偏移量错位由 warc_record_id 那一条抓，位腐坏由\n"
+        "gzip 自己的 CRC 抓。剩给它的是「记录 id 对得上、gzip 也解得开，但\n"
+        "正文不是当初摘要的那一段」——写字节与算哈希这两步之间出的岔子。",
+    )
+    lines = index_lines(d)
+    # 换成另一个合法的 sha256（就是「不是这条正文的那个」）。
+    # 【不能】用空串的哈希：那会撞上 SPEC §6.5.2 那条规则，用例就同时踩中
+    # 两条检查，谁也说不清它到底在测哪一条。
+    lines[0]["content_sha256"] = hashlib.sha256(b"another page entirely").hexdigest()
+    save_index(d, lines)  # fix_hash=True —— 让 manifest 自洽，这才是要模拟的形状
 
 
 def case_record_count_mismatch() -> None:
@@ -537,6 +561,7 @@ def main() -> None:
     case_full_with_floor()
     case_empty_payload_ok()
     case_record_count_mismatch()
+    case_content_hash_mismatch()
     print("用例已生成。")
 
 

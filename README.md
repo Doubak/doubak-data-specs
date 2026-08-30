@@ -49,9 +49,12 @@ cd canonical/tests && python3 make-tests.py
 cd bundle/v1
 python3 validate.py examples/minimal-bundle   # 校验一个 bundle
 python3 validate.py --tests                   # 跑全部用例
+python3 validate.py --integrity-only <目录>   # 只把「字节坏了」当失败
 ```
 
 结构性检查无需任何依赖；装了 `jsonschema` 与 `referencing` 后会额外运行 schema 层校验。
+
+错误分**完整性**（字节不是它自称的那些，退出码 `2`）与**合规性**（字节是好的，某句声明不合规范，退出码 `1`）两类。见 SPEC §12.1。
 
 ### 重新生成例子与用例
 

@@ -11,7 +11,28 @@
    member 吗？claimed_source 真的指向一条存在的捕获吗？
 2. **schema 校验**（装了 jsonschema 才运行）——字段层面的形状。
 
-退出码 0 = 通过。
+## 错误分两类，退出码也分两类
+
+    完整性 integrity   这些字节不是它自称的那些。段的 sha256 对不上、
+                       某个 offset 解压不开、WARC 记录 id 与索引对不上。
+    合规性 conformance  字节是好的，但生产者的某句声明不合规范。
+                       crawl_state 的不变量、coverage 的可追溯性、缺 README。
+
+**分开是因为它们的可修复性完全不同。** bundle 是冻住的——用户不可能为了
+一个 enumeration 字段重抓一遍 2022 年的档案，所以合规性错误里有一部分是
+【永久】的：实测一份真实的 24 份档案的目录，有 4 份因为一个已经修好的
+生产者 bug 永远报 45 个错。而一个永远有内容的失败列表就是一个没人看的
+失败列表——那 45 条会把真正要紧的那一条埋掉。完整性错误则相反：健康的
+档案上它永远是零，一旦非零就是这份档案真的坏了，而且下一步很明确
+（重新拷贝、重新导入）。
+
+退出码：
+
+    0   干净
+    1   只有合规性错误（字节是好的）
+    2   有完整性错误（字节不可信）
+
+所以 `!= 0` 仍然是「有问题」，与从前一致；要只卡完整性就用 `--integrity-only`。
 """
 
 import argparse
@@ -38,20 +59,65 @@ SCHEMA_FILES = {
 }
 
 
+SEP = b"\r\n\r\n"
+
+
+def http_body(raw: bytes) -> "bytes | None":
+    """从一条 WARC response 记录里取出 HTTP 正文字节。
+
+    这正是 `content_sha256` 摘的那一段——注意是【所存储的】载荷，不是线上的
+    （具体成色见 capture_fidelity）。取不出来时返回 None，让调用方去分辨
+    「结构坏了」与「哈希对不上」这两件不同的事。
+
+    切片按【字节】做。按字符做会在中文上错位，一个汉字三个字节。
+    """
+    head_end = raw.find(SEP)
+    if head_end < 0:
+        return None
+    warc_head = raw[:head_end].decode("utf-8", "replace")
+    m = re.search(r"^Content-Length: (\d+)$", warc_head, re.M)
+    if not m:
+        return None
+    block = raw[head_end + len(SEP): head_end + len(SEP) + int(m.group(1))]
+    body_at = block.find(SEP)
+    return block if body_at < 0 else block[body_at + len(SEP):]
+
+
 class Report:
+    """错误分两桶。
+
+    `error()` 是合规性，`integrity()` 是完整性——**默认落在合规性一侧**，
+    因为加一条新检查时，把它误判成完整性的代价（真的坏档案被同一个出口
+    淹没）比反过来大。要进完整性桶必须显式写出来。
+    """
+
     def __init__(self) -> None:
         self.errors: "list[str]" = []
+        self.integrity_errors: "list[str]" = []
         self.warnings: "list[str]" = []
 
     def error(self, msg: str) -> None:
+        """合规性：字节没问题，但某句声明不合规范。"""
         self.errors.append(msg)
+
+    def integrity(self, msg: str) -> None:
+        """完整性：这些字节不是它自称的那些。"""
+        self.integrity_errors.append(msg)
 
     def warn(self, msg: str) -> None:
         self.warnings.append(msg)
 
     @property
+    def all_errors(self) -> "list[str]":
+        return self.integrity_errors + self.errors
+
+    @property
     def ok(self) -> bool:
-        return not self.errors
+        return not self.errors and not self.integrity_errors
+
+    @property
+    def bytes_ok(self) -> bool:
+        return not self.integrity_errors
 
 
 # --------------------------------------------------------------------------
@@ -115,30 +181,30 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
         name = seg.get("filename", "")
         path = root / name
         if not path.exists():
-            rep.error(f"manifest 列出的段文件不存在: {name}")
+            rep.integrity(f"manifest 列出的段文件不存在: {name}")
             continue
         data = path.read_bytes()
         segment_bytes[name] = data
         if bundle_id and bundle_id not in name:
             rep.error(f"段文件名未内嵌 bundle_id，多次抓取混放时会互相覆盖: {name}")
         if seg.get("bytes") != len(data):
-            rep.error(f"{name}: 大小不符，manifest 记 {seg.get('bytes')}，实际 {len(data)}")
+            rep.integrity(f"{name}: 大小不符，manifest 记 {seg.get('bytes')}，实际 {len(data)}")
         actual = hashlib.sha256(data).hexdigest()
         if seg.get("sha256") != actual:
-            rep.error(f"{name}: sha256 不符\n  manifest: {seg.get('sha256')}\n  实际:     {actual}")
+            rep.integrity(f"{name}: sha256 不符\n  manifest: {seg.get('sha256')}\n  实际:     {actual}")
 
     # -- index -------------------------------------------------------------
     index_meta = manifest.get("index", {})
     index_path = root / index_meta.get("filename", "")
     if not index_path.exists():
-        rep.error(f"manifest 列出的 index 文件不存在: {index_meta.get('filename')}")
+        rep.integrity(f"manifest 列出的 index 文件不存在: {index_meta.get('filename')}")
         return
     index_text = index_path.read_text(encoding="utf-8")
 
     if "sha256" in index_meta:
         actual = hashlib.sha256(index_text.encode()).hexdigest()
         if index_meta["sha256"] != actual:
-            rep.error(f"index sha256 不符\n  manifest: {index_meta['sha256']}\n  实际:     {actual}")
+            rep.integrity(f"index sha256 不符\n  manifest: {index_meta['sha256']}\n  实际:     {actual}")
 
     entries = []
     for lineno, line in enumerate(index_text.splitlines(), start=1):
@@ -150,7 +216,7 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
             rep.error(f"index 第 {lineno} 行不是合法 JSON: {e}")
 
     if index_meta.get("line_count") != len(entries):
-        rep.error(
+        rep.integrity(
             f"index 行数不符，manifest 记 {index_meta.get('line_count')}，实际 {len(entries)}"
         )
 
@@ -199,19 +265,46 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
             data = segment_bytes[seg]
             off, ln = e["offset"], e["length"]
             if off + ln > len(data):
-                rep.error(f"{where}: offset+length 超出段文件长度")
+                rep.integrity(f"{where}: offset+length 超出段文件长度")
             else:
                 member = data[off : off + ln]
                 try:
                     raw = gzip.decompress(member)
                 except Exception as exc:
-                    rep.error(f"{where}: offset 处不是合法的 gzip member: {exc}")
+                    rep.integrity(f"{where}: offset 处不是合法的 gzip member: {exc}")
                 else:
                     if not raw.startswith(b"WARC/"):
-                        rep.error(f"{where}: 解压结果不是 WARC 记录")
+                        rep.integrity(f"{where}: 解压结果不是 WARC 记录")
                     rid = e.get("warc_record_id", "")
                     if rid and f"<{rid}>".encode() not in raw:
-                        rep.error(f"{where}: WARC 记录中找不到 warc_record_id {rid}")
+                        rep.integrity(f"{where}: WARC 记录中找不到 warc_record_id {rid}")
+
+                    # content_sha256 对着正文核一遍。
+                    #
+                    # 这个字段【每一行都有】，而在此之前【谁也没读过它】——
+                    # 解析器不读，这个校验器也不读。规范要求写、没有任何一处
+                    # 校对的字段，等于没有要求。
+                    #
+                    # 它抓到的东西比上面那条 warc_record_id 窄：偏移量错位由
+                    # 后者抓，位腐坏由 gzip 自己的 CRC 抓。剩下的是「记录 id
+                    # 对得上、gzip 也解得开，但正文不是当初摘要的那一段」——
+                    # 生产者一边算哈希一边写字节时才可能出的岔子。窄，但一旦
+                    # 发生就完全没有别的东西看得见。
+                    declared = e.get("content_sha256")
+                    if declared:
+                        body = http_body(raw)
+                        if body is None:
+                            rep.integrity(
+                                f"{where}: 取不出 HTTP 正文，无法核对 content_sha256"
+                            )
+                        else:
+                            got = hashlib.sha256(body).hexdigest()
+                            if got != declared:
+                                rep.integrity(
+                                    f"{where}: content_sha256 与正文不符\n"
+                                    f"  index: {declared}\n"
+                                    f"  实际:  {got}"
+                                )
 
     # 每段的 record_count 必须等于指向它的 index 行数。
     # warcinfo 不是捕获，不进 index，也不计入 record_count。
@@ -223,7 +316,7 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
         declared = seg.get("record_count")
         actual = per_segment.get(name, 0)
         if declared is not None and declared != actual:
-            rep.error(
+            rep.integrity(
                 f"{name}: record_count 为 {declared}，但 index 中指向本段的行数为 {actual}。"
                 f"（record_count 不含段首的 warcinfo）"
             )
@@ -320,6 +413,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("bundle", nargs="?", help="bundle 目录")
     ap.add_argument("--tests", action="store_true", help="跑 tests/ 下的全部用例")
+    ap.add_argument(
+        "--integrity-only", action="store_true",
+        help="只看完整性：合规性错误照常打印，但不影响退出码",
+    )
     args = ap.parse_args()
 
     schema_validate = load_schema_validator()
@@ -340,7 +437,7 @@ def main() -> int:
                 if mark == "FAIL":
                     failed += 1
                 print(f"[{mark}] {kind}/{case.name}  (期望 {'通过' if expect_ok else '报错'})")
-                for e in rep.errors:
+                for e in rep.all_errors:
                     print(f"        → {e.splitlines()[0]}")
         # 例子本身也必须过。
         example = HERE / "examples" / "minimal-bundle"
@@ -350,7 +447,7 @@ def main() -> int:
             if not rep.ok:
                 failed += 1
             print(f"[{mark}] examples/minimal-bundle  (期望 通过)")
-            for e in rep.errors:
+            for e in rep.all_errors:
                 print(f"        → {e}")
         print(f"\n{'全部通过' if failed == 0 else f'{failed} 个用例未达预期'}")
         return 1 if failed else 0
@@ -361,10 +458,39 @@ def main() -> int:
     rep = run_one(pathlib.Path(args.bundle), schema_validate)
     for w in rep.warnings:
         print(f"警告: {w}")
-    for e in rep.errors:
-        print(f"错误: {e}")
-    print("\n通过" if rep.ok else f"\n失败：{len(rep.errors)} 个错误")
-    return 0 if rep.ok else 1
+
+    # **两类分开印，完整性在前。** 混在一列里，那 45 条冻住的合规性错误会把
+    # 一条真的字节损坏挤到屏幕外面去——而两者要做的事完全不同。
+    if rep.integrity_errors:
+        print("\n完整性错误（这些字节不是它自称的那些）：")
+        for e in rep.integrity_errors:
+            print(f"  ✖ {e}")
+    if rep.errors:
+        print("\n合规性错误（字节是好的，是某句声明不合规范）：")
+        for e in rep.errors:
+            print(f"  ✖ {e}")
+
+    if rep.ok:
+        print("\n通过")
+        return 0
+
+    print()
+    if rep.integrity_errors:
+        print(f"完整性：{len(rep.integrity_errors)} 个错误 —— 这份档案的字节不可信。")
+        print("  重抓没有用（源站那边好好的）。要做的是拿原始拷贝重新解压 / 重新导入一次。")
+    else:
+        print("完整性：通过 —— 字节都对得上。")
+    if rep.errors:
+        print(f"合规性：{len(rep.errors)} 个错误。")
+        # bundle 是冻住的，所以这里有一部分是【永久】的：抓取已经发生过了，
+        # 没人会为了一个字段重抓 2022 年的档案。说清楚它不代表数据缺了。
+        print("  bundle 一旦产出就是冻住的，所以其中一部分可能永远修不掉"
+              "（生产者的 bug 修了，已有档案照旧）。")
+        print("  合规性错误说的是「这句声明别当真」，不是「数据缺了」。")
+
+    if args.integrity_only:
+        return 2 if rep.integrity_errors else 0
+    return 2 if rep.integrity_errors else 1
 
 
 if __name__ == "__main__":
