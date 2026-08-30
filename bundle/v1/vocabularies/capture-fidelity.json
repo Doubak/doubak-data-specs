@@ -1,6 +1,6 @@
 {
   "vocabulary": "capture_fidelity",
-  "spec_version": "bundle/1.0",
+  "spec_version": "bundle/1.3",
   "open": false,
 
   "description": "如实说明一条记录的成色。\n\n本规范的原则是「原始字节、原始响应头、不做清洗」，但在浏览器扩展中，fetch() 做不到这一点：它交给调用方的响应体已经解除了 Content-Encoding，其 Headers 对象也是过滤过的——Set-Cookie 不可见，响应头的原始顺序与大小写均已丢失。\n\n这不是可以含糊过去的细节。十年后有人拿这份档案做取证时，本字段就是他判断能信到什么程度的依据。**做不到却宣称做到了，比做不到本身糟糕得多。**",
@@ -17,6 +17,11 @@
     "decoded_body+filtered_headers": {
       "meaning": "响应体来自 fetch()，响应头亦为 fetch() 提供的过滤版本。",
       "availability": "退化取值：当响应头观察不可用时使用。"
+    },
+    "decoded_body+synthesized_headers": {
+      "meaning": "响应体是真的，**响应头是编的**。原始抓取工具只把正文写进了磁盘，没有留下任何响应头、也没有留下状态码；WARC 记录里那个 `HTTP/1.1 200 OK` 与随后的几行头，是导入工具为了构成一条合法 WARC 记录而现编的。",
+      "availability": "只给导入器用（bundle/1.3 新增）。抓取工具不得使用此取值——它们拿得到响应头，写这个就是在自贬成色。",
+      "why": "第三方抓取工具存下来的往往只有 HTML。要把这些页面变成 bundle，就必须现编一个 HTTP 响应块，否则 WARC 的 response 记录不成立。而一旦现编，读者就必须被告知：**这条记录里正文可信，头部不可信**。\n\n把它塞进 filtered_headers 是最省事也最错的做法——那个取值宣称头部来自 fetch()，即来自服务器。二者的区别恰恰是取证时唯一要问的问题。\n\n同理，此取值也意味着 `http_status` 若出现则同样是编的，读者不得据以判断任何事情（本来也不该：豆瓣以 200 返回封锁页，判定归 verdict）。"
     }
   },
 

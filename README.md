@@ -10,7 +10,7 @@
 
 | 目录 | 谁写 | 生命周期 | 状态 |
 |---|---|---|---|
-| [`bundle/`](bundle/) | 浏览器扩展 | 用户跑过一次就**冻结**（没法请人重爬） | [草案 v1.0](bundle/README.md) |
+| [`bundle/`](bundle/) | 抓取工具与导入器 | 用户跑过一次就**冻结**（没法请人重爬） | [草案 bundle/1.3](bundle/README.md) |
 | [`canonical/`](canonical/) | 解析器 | **随时可改**（重跑解析器不要钱） | [摄取规则 + 标记与作品的 schema](canonical/README.md) |
 
 把这两者当成同一个格式来设计，是本项目最主要的翻车方式。

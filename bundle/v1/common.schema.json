@@ -14,7 +14,7 @@
 
     "current_spec_version": {
       "type": "string",
-      "const": "bundle/1.2",
+      "const": "bundle/1.3",
       "description": "本目录当前这一版的版本号——【生产者应当写下的那个值】。\n\n与 spec_version 是两件事，不可混用：spec_version 说的是【读者必须接受什么】（任何 1.x），这里说的是【新档案该写什么】（当前这一版）。把两者合成一个 const，就会在下一次小版本递增时二选一：要么 schema 校验不过它自己描述的格式，要么全部既有档案变成非法。\n\n本定义不被任何 schema 引用，它的作用是让「当前版本是多少」这件事对代码生成器可读，而不必去解析 SPEC.md 的散文。"
     },
 
@@ -95,9 +95,10 @@
       "enum": [
         "raw",
         "decoded_body+observed_headers",
-        "decoded_body+filtered_headers"
+        "decoded_body+filtered_headers",
+        "decoded_body+synthesized_headers"
       ],
-      "description": "本条记录的保真度。raw = 线上原始字节（浏览器扩展目前无可行途径，预留）；decoded_body = fetch() 已解除 Content-Encoding 的响应体；observed_headers = 由 chrome.webRequest 观察补全的真实响应头；filtered_headers = fetch() 提供的过滤版响应头（Set-Cookie 等不可见，头顺序与大小写已丢失）。"
+      "description": "本条记录的保真度。raw = 线上原始字节（浏览器扩展目前无可行途径，预留）；decoded_body = fetch() 已解除 Content-Encoding 的响应体；observed_headers = 由 chrome.webRequest 观察补全的真实响应头；filtered_headers = fetch() 提供的过滤版响应头（Set-Cookie 等不可见，头顺序与大小写已丢失）；synthesized_headers = 响应头【根本没被记录过】，WARC 记录里那几行是导入工具为了构成一条合法记录而现编的（bundle/1.3，见 SPEC §6.4.1）。"
     },
 
     "url": {
