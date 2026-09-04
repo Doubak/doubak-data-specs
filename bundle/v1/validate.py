@@ -386,6 +386,37 @@ def check_bundle(root: pathlib.Path, rep: Report, schema_validate=None) -> None:
                 f"于是一份增量与一份全量做差就会把没删的当成删了。"
             )
 
+    # -- 缺口是不是被这份档案自己推翻了（bundle/1.4）------------------------
+    #
+    # 一处带 `url` 的 `fetch_failed` 缺口说的是「这一个 URL 反复抓不下来」。
+    # 如果同一份档案的索引里就躺着那个 URL 的 `verdict: ok` 捕获，这句话是假的。
+    #
+    # 这与 §2「不得用 claimed_count 授予完整性」是同一条不对称原则的另一面：
+    # **授予要严，证伪可松**。而这里连「松」都算不上——用来证伪的是生产者
+    # 自己写下的另一句话，不需要相信豆瓣的任何数字。
+    #
+    # **只看 `url` 字段，绝不去解析 `detail`。** 1.3 及更早的缺口只有 detail，
+    # 那句话里往往也含着 URL；靠子串把它抠出来，判错的方向是「悄悄放过一处
+    # 真缺口」或者「诬告一处真实的失败」，两个都比漏报贵。
+    ok_urls = {
+        e.get("url")
+        for _, e in entries
+        if e.get("verdict") == "ok" and e.get("url")
+    }
+    for cs in manifest.get("crawl_state", []):
+        rk = cs.get("route_key", "?")
+        for gap in cs.get("gaps") or []:
+            if gap.get("reason") != "fetch_failed":
+                continue
+            u = gap.get("url")
+            if u and u in ok_urls:
+                rep.error(
+                    f"crawl_state[{rk}]: 缺口说 {u} 没抓下来，"
+                    f"而这份档案的索引里就有它的 verdict=ok 捕获——"
+                    f"多半是重试成功之后没有把这处缺口收回。"
+                    f"档案是全的，声明是错的，而档案冻结之后这句话就再也改不了。"
+                )
+
     # -- checkpoint --------------------------------------------------------
     cp_path = root / "checkpoint.json"
     status = manifest.get("status")

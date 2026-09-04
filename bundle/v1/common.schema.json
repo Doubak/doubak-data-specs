@@ -14,7 +14,7 @@
 
     "current_spec_version": {
       "type": "string",
-      "const": "bundle/1.3",
+      "const": "bundle/1.4",
       "description": "本目录当前这一版的版本号——【生产者应当写下的那个值】。\n\n与 spec_version 是两件事，不可混用：spec_version 说的是【读者必须接受什么】（任何 1.x），这里说的是【新档案该写什么】（当前这一版）。把两者合成一个 const，就会在下一次小版本递增时二选一：要么 schema 校验不过它自己描述的格式，要么全部既有档案变成非法。\n\n本定义不被任何 schema 引用，它的作用是让「当前版本是多少」这件事对代码生成器可读，而不必去解析 SPEC.md 的散文。"
     },
 
@@ -134,7 +134,12 @@
           "type": "string",
           "examples": ["fetch_failed", "blocked", "aborted", "unresolved"]
         },
-        "detail": { "type": "string" }
+        "detail": { "type": "string" },
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "这处缺口对应的那一个 URL（bundle/1.4）。仅当缺口确实只关于某一个 URL 时才写——例如某一页反复抓不下来。detail 是给人看的整句话，里面往往也含着这个 URL；url 是给机器用的那一份，供精确比对。缺口若与单个 URL 无关（aborted、no_items_observed），则不得写。"
+        }
       },
       "required": ["reason"],
       "additionalProperties": false

@@ -257,6 +257,37 @@ def case_advanced_with_gaps() -> None:
     save_manifest(d, m)
 
 
+def case_gap_already_captured() -> None:
+    """缺口说这一页没抓下来，而同一份档案里就有它 verdict=ok 的捕获（bundle/1.4）。
+
+    真实来源：一张广播配图三次超时、记下缺口，用户点「重试」这一次成功了——
+    而缺口只增不减，于是 contiguous=false 被封进了 manifest。**档案是全的，
+    声明是错的**，且冻结之后再也改不了。
+
+    这条能被本地证伪，靠的完全是生产者自己写下的两句话，不需要相信豆瓣的
+    任何数字。校验器只看 `url` 字段，绝不去解析 `detail` 里的 URL。
+    """
+    d = fresh(
+        "invalid",
+        "gap-already-captured",
+        "应报错：缺口声称某 URL 抓不下来，而索引里就有该 URL 的 verdict=ok 捕获。\n"
+        "多半是重试成功之后没有把缺口收回——档案是全的，声明是错的。",
+    )
+    m = load_manifest(d)
+    rows = index_lines(d)
+    hit = next(r for r in rows if r.get("verdict") == "ok")
+    m["crawl_state"][0]["advanced"] = False
+    m["crawl_state"][0]["contiguous"] = False
+    m["crawl_state"][0]["gaps"] = [
+        {
+            "reason": "fetch_failed",
+            "detail": f"{hit['url']}：重试 3 次仍失败（请求超时）",
+            "url": hit["url"],
+        }
+    ]
+    save_manifest(d, m)
+
+
 def case_dangling_claimed_source() -> None:
     d = fresh(
         "invalid",
@@ -547,6 +578,7 @@ def main() -> None:
     case_valid_unknown_verdict()
     case_advanced_without_contiguity()
     case_advanced_with_gaps()
+    case_gap_already_captured()
     case_dangling_claimed_source()
     case_claimed_without_source()
     case_forbidden_completeness_field()
