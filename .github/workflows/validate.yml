@@ -41,6 +41,12 @@ jobs:
 
       # coveralls.mjs 是 JS —— runner 自带 node，不需要 setup-node。
       # 这个仓库没有 npm，所以脚本和它的测试都放在 tools/ 下。
+      # 校验器最后那句话必须说清它有没有跳过一层。CI 里 jsonschema 是装了的，
+      # 所以这一步同时验到「装了就不该带附注」的端到端那一遍——本机没装时那一遍
+      # 会提示跳过（性质本身另有一条不依赖库的断言兜着）。
+      - name: 校验器的措辞
+        run: python3 tools/test_validator_output.py
+
       - name: 上报脚本自己的测试
         run: node --test tools/coveralls.test.mjs
 

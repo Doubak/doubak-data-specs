@@ -183,12 +183,17 @@ def main() -> int:
               f"{'、'.join(FILES)}）。没有东西可校验不等于校验通过。", file=sys.stderr)
         return 2
 
+    # **没查到的那一层，要写进最后那句话里，而不是只在上面提一句。**
+    # 开头（或中间）说「跳过了 schema 层」、末尾说「全部通过」时，被读进去的
+    # 是后面那两个字——bundle 那边的校验器就这样放过了一次真的不合规。
+    caveat = ""
     if unknown:
         # 校验器不认识的关键字 = 它其实没在检查那一条。必须说出来。
         print(f"\n[注意] schema 里用到了本校验器不支持的关键字: {sorted(unknown)}")
         print("       那些约束【没有被检查】。装 jsonschema 可做完整校验。")
+        caveat = f"（**{len(unknown)} 条约束没查** —— 本校验器不认识 {sorted(unknown)}）"
 
-    print("\n全部通过" if failed == 0 else f"\n共 {failed} 行不合规")
+    print(f"\n全部通过{caveat}" if failed == 0 else f"\n共 {failed} 行不合规")
     return 1 if failed else 0
 
 

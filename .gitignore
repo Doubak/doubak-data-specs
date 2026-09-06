@@ -2,3 +2,6 @@
 lcov.info
 coveralls.json
 .coverage
+
+# tools/test_validator_output.py 会 import 一次 validate.py 来验「schema 层真跑了」那一支
+__pycache__/

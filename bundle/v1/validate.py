@@ -451,6 +451,17 @@ def main() -> int:
     args = ap.parse_args()
 
     schema_validate = load_schema_validator()
+    # **跳过了哪一层，要写进最后那句话里。**
+    #
+    # 原来是开头印一句「提示: 未安装 jsonschema，跳过 schema 层校验」，末尾印一句
+    # 「通过」。**被读进去的是后面那两个字。** 这不是假想：写 bundle/1.4 的
+    # `gap.url` 时，产出的档案有一小段时间是不合规的（gap 是
+    # `additionalProperties: false`，多一个字段就不合规），而本机的校验器
+    # 从头到尾只说了「通过」——因为不合规恰恰只有 schema 那一层看得见。
+    #
+    # 退出码**不动**：少装一个可选依赖不是档案的毛病，把它算成失败会让
+    # 「零依赖也能跑」这句话作废。要改的是那句话，不是那个数。
+    caveat = "" if schema_validate else "（**只跑了结构层** —— 没装 jsonschema，schema 层没查）"
     if schema_validate is None:
         print("提示: 未安装 jsonschema，跳过 schema 层校验，仅运行结构性检查。")
         print("      pip install jsonschema referencing\n")
@@ -480,7 +491,7 @@ def main() -> int:
             print(f"[{mark}] examples/minimal-bundle  (期望 通过)")
             for e in rep.all_errors:
                 print(f"        → {e}")
-        print(f"\n{'全部通过' if failed == 0 else f'{failed} 个用例未达预期'}")
+        print(f"\n{f'全部通过{caveat}' if failed == 0 else f'{failed} 个用例未达预期'}")
         return 1 if failed else 0
 
     if not args.bundle:
@@ -502,7 +513,7 @@ def main() -> int:
             print(f"  ✖ {e}")
 
     if rep.ok:
-        print("\n通过")
+        print(f"\n通过{caveat}")
         return 0
 
     print()
@@ -513,6 +524,9 @@ def main() -> int:
         print("完整性：通过 —— 字节都对得上。")
     if rep.errors:
         print(f"合规性：{len(rep.errors)} 个错误。")
+    elif caveat:
+        # 完整性有错、合规性没错时，「合规性没错」这半句同样是没查全的结论。
+        print(f"合规性：没查出错误{caveat}")
         # bundle 是冻住的，所以这里有一部分是【永久】的：抓取已经发生过了，
         # 没人会为了一个字段重抓 2022 年的档案。说清楚它不代表数据缺了。
         print("  bundle 一旦产出就是冻住的，所以其中一部分可能永远修不掉"

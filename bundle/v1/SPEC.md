@@ -738,6 +738,8 @@ python3 validate.py --integrity-only <bundle 目录>
 ```
 
 它分两层：**结构性检查**（无依赖，跨文件一致性）与 **schema 校验**（装了 `jsonschema` 才运行）。
+**跳过了哪一层，写在最后那句话里**（`通过（只跑了结构层 —— 没装 jsonschema，schema 层没查）`），
+而不是只在开头提一句：一份输出的最后两个字才是会被读进去的那两个字。
 
 最有价值的是第一层，而且其中大多数**无法**用 JSON Schema 表达：偏移量真的指向一个可解压的 gzip member 吗？`claimed_source` 真的指向一条存在的捕获吗？`advanced` 与 `contiguous` 自洽吗？
 
