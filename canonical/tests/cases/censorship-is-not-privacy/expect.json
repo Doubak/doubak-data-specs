@@ -1,5 +1,5 @@
 {
-  "longform": 3,
+  "longform": 5,
   "longform_restriction": {
     "https://www.douban.com/note/872015292/": [
       "public",
@@ -12,6 +12,14 @@
     "https://www.douban.com/topic/499256241/": [
       "private",
       "author"
+    ],
+    "https://www.douban.com/note/100000001/": [
+      "unknown",
+      null
+    ],
+    "https://www.douban.com/note/100000002/": [
+      "public",
+      null
     ]
   }
 }

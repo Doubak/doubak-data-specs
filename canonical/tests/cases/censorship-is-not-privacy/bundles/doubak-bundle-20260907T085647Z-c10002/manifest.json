@@ -17,17 +17,17 @@
   "segments": [
     {
       "filename": "data-20260907T085647Z-c10002-00001.warc.gz",
-      "bytes": 2430,
-      "sha256": "76304b8a9d3caf721047959b6a40c40f65d6af0a1bd4103a6f12ab700113747e",
-      "record_count": 3,
+      "bytes": 3875,
+      "sha256": "be1c5a9a0f6701d8e741311a9a8751a36f83f9844e75d33be77b8b994519c28d",
+      "record_count": 5,
       "first_capture_id": "20260907T085647Z-c10002#000001",
-      "last_capture_id": "20260907T085647Z-c10002#000003"
+      "last_capture_id": "20260907T085647Z-c10002#000005"
     }
   ],
   "index": {
     "filename": "index-20260907T085647Z-c10002.ndjson",
-    "sha256": "ec381a753911effa5261f8382e0bf800fde95f7024c288efe24594f9d1b6f11e",
-    "line_count": 3
+    "sha256": "fd2931b5b8b90837e95986ca2310bc54948bd9d36089543b9d0168ef9874ea9e",
+    "line_count": 5
   },
   "coverage": [],
   "crawl_state": [

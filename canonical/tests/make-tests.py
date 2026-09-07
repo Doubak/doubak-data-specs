@@ -481,7 +481,7 @@ def broadcast_page(items, owner="82160871"):
 CENSOR_NOTICE = "含有违规或引发不良讨论的内容，内容仅自己可见，请勿发布同类信息"
 
 
-def note_page(note_id, body, views, *, private=False, censored=False):
+def note_page(note_id, body, views, *, private=False, censored=False, footer_stat=True):
     """一张旧模板（`/note/<id>/`）的日记正文页。
 
     `views` 是页脚的浏览计数——它每次抓取都在涨。
@@ -499,6 +499,11 @@ def note_page(note_id, body, views, *, private=False, censored=False):
         f'<p class="notice-info-text">{CENSOR_NOTICE}</p></div></div>'
         if censored else ""
     )
+    stat = (
+        f'<div class="note-footer-stat">{privacy}'
+        f'<span class="note-footer-stat-modify">编辑 | 删除</span></div>'
+        if footer_stat else ""
+    )
     return (
         f"<html><body>"
         f'<div id="note-{note_id}" class="note-container" '
@@ -510,10 +515,7 @@ def note_page(note_id, body, views, *, private=False, censored=False):
         f'<div id="note_{note_id}_full"><div id="link-report">'
         f'<div class="note"><p data-page="0">{body}</p></div>'
         f"</div></div>"
-        f'<div id="note_{note_id}_footer">'
-        f'<div class="note-footer-stat">{privacy}'
-        f'<span class="note-footer-stat-modify">编辑 | 删除</span></div>'
-        f"{views}人浏览</div>"
+        f'<div id="note_{note_id}_footer">{stat}{views}人浏览</div>'
         f"</div></body></html>"
     ).encode()
 
@@ -535,6 +537,10 @@ def topic_page(topic_id, body, *, private=False):
         f'<div class="topic-content"><div class="rich-content topic-richtext">'
         f"<p>{body}</p></div></div>"
         f'<span class="create-visit-count">4浏览</span>'
+        # 这一版模板里，页面上唯一写着自己网址的地方是投诉按钮那段脚本
+        # ——实测如此，`data-tid` 并不存在。
+        f'<script>window.createReportButton({{"reportUrl": '
+        f'"https://www.douban.com/topic/{topic_id}/?_spm_id=ODIxNjA4NzE"}})</script>'
         f"</div></div></body></html>"
     ).encode()
 
@@ -734,15 +740,22 @@ def c_censorship_is_not_privacy():
         "也不是模板。两种模板的隐私标记长得完全不同（旧的在页脚、新的在 `topic-meta`\n"
         "里），所以这里两种各放一篇，免得实现把「新模板」当成「作者设的」。\n"
         "\n"
-        "第三篇是对照：同一个旧模板、没有任何标记，必须是 public——而不是 unknown，\n"
-        "否则这个字段对绝大多数日记都没有意义。\n"
-        "解析器必须：3 篇长文，且三篇的 (visibility, restricted_by) 各是各的。",
+        "另外三篇是对照，每一篇各挡一种错法：\n"
+        "  · 同一个旧模板、容器在、里面没有标记 → public（不是 unknown，否则这个字段\n"
+        "    对绝大多数日记都没有意义）\n"
+        "  · **连隐私容器都找不到** → unknown。这是豆瓣改版那天的形状，而把它并进\n"
+        "    public 就是所有私密日记静默变成公开——发出去的东西撤不回来\n"
+        "  · 正文里**写着**「仅自己可见」这几个字、但页面上没有标记 → public。判据是\n"
+        "    结构不是文字，与广播那条「（全文）必须结构性地认」同一条\n"
+        "解析器必须：5 篇长文，且五篇的 (visibility, restricted_by) 各是各的。",
         {
-            "longform": 3,
+            "longform": 5,
             "longform_restriction": {
                 "https://www.douban.com/note/872015292/": ["public", None],
                 "https://www.douban.com/note/868128497/": ["private", "platform"],
                 "https://www.douban.com/topic/499256241/": ["private", "author"],
+                "https://www.douban.com/note/100000001/": ["unknown", None],
+                "https://www.douban.com/note/100000002/": ["public", None],
             },
         },
     )
@@ -752,7 +765,11 @@ def c_censorship_is_not_privacy():
                  (*NOTE, "ok", T1, note_page("868128497", "一篇被豆瓣锁掉的日记。", 11,
                                              private=True, censored=True)),
                  (*TOPIC, "ok", T1, topic_page("499256241", "一篇作者自己设成私密的日记。",
-                                               private=True))],
+                                               private=True)),
+                 (*NOTE, "ok", T1, note_page("100000001", "豆瓣哪天改了版，这一页就长这样。", 12,
+                                             footer_stat=False)),
+                 (*NOTE, "ok", T1, note_page("100000002",
+                                             "我这篇日记本来想设成仅自己可见的，后来没设。", 13))],
                 crawl_state=[cs("note.item", intent="note.item")])
 
 
