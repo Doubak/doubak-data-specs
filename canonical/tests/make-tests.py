@@ -476,20 +476,66 @@ def broadcast_page(items, owner="82160871"):
     ).encode()
 
 
-def note_page(note_id, body, views):
-    """一张日记正文页。`views` 是页脚的浏览计数——它每次抓取都在涨。"""
+# 豆瓣锁定一篇日记时，自己在页面上给出的说法。逐字，取自真实捕获
+# （/note/868128497/，8 次捕获一字未变）。
+CENSOR_NOTICE = "含有违规或引发不良讨论的内容，内容仅自己可见，请勿发布同类信息"
+
+
+def note_page(note_id, body, views, *, private=False, censored=False):
+    """一张旧模板（`/note/<id>/`）的日记正文页。
+
+    `views` 是页脚的浏览计数——它每次抓取都在涨。
+
+    `private` 往页脚的 `note-footer-stat` 里塞进那条隐私行；`censored` 再加上豆瓣
+    自己那条通告。**两者是分开的开关**，因为它们在页面上就是两处独立的东西，而
+    「私密」与「谁让它私密」正是这一组用例要分开的两件事。
+    """
+    privacy = (
+        '<div class="note-footer-stat-privacy"><span>此日记锁定仅自己可见</span></div>'
+        if private else ""
+    )
+    notice = (
+        f'<div class="notice-info notice-info-type-4"><div class="notice-info-texts">'
+        f'<p class="notice-info-text">{CENSOR_NOTICE}</p></div></div>'
+        if censored else ""
+    )
     return (
         f"<html><body>"
         f'<div id="note-{note_id}" class="note-container" '
         f'data-url="https://www.douban.com/note/{note_id}/" data-author="MewX">'
+        f"{notice}"
         f"<h1>日记标题</h1>"
         f'<span class="pub-date">2025-04-14 18:47:50 澳大利亚</span>'
         f'<div class="note" id="note_{note_id}_short" style="display:none;"></div>'
         f'<div id="note_{note_id}_full"><div id="link-report">'
         f'<div class="note"><p data-page="0">{body}</p></div>'
         f"</div></div>"
-        f'<div id="note_{note_id}_footer">{views}人浏览 编辑 | 删除</div>'
+        f'<div id="note_{note_id}_footer">'
+        f'<div class="note-footer-stat">{privacy}'
+        f'<span class="note-footer-stat-modify">编辑 | 删除</span></div>'
+        f"{views}人浏览</div>"
         f"</div></body></html>"
+    ).encode()
+
+
+def topic_page(topic_id, body, *, private=False):
+    """一张新模板（`/topic/<id>/`）的日记正文页。
+
+    **两种模板同时存在**，发日记时用哪个编辑器就得到哪一种；这里的隐私标记也长得
+    完全不同——旧模板在页脚，新模板在时间戳旁边的 `topic-meta` 里。
+    """
+    tag = '<i class="private-tag" title="仅自己可见"></i>' if private else ""
+    return (
+        f"<html><body><div class=\"article\">"
+        f'<h1 class="topic-title">日记标题</h1>'
+        f'<div class="personal-topic" id="topic-content">'
+        f'<div class="topic-meta">'
+        f'<span class="create-time">2026-09-07 16:56:22</span>'
+        f'<span class="ip-location">澳大利亚</span>{tag}</div>'
+        f'<div class="topic-content"><div class="rich-content topic-richtext">'
+        f"<p>{body}</p></div></div>"
+        f'<span class="create-visit-count">4浏览</span>'
+        f"</div></div></body></html>"
     ).encode()
 
 
@@ -675,6 +721,41 @@ def c_longform_body_is_not_the_summary():
                 crawl_state=[cs("note.item", intent="note.item")])
 
 
+def c_censorship_is_not_privacy():
+    b = case(
+        "censorship-is-not-privacy",
+        "【「仅自己可见」有两个成因，方向相反，不得合成一个字段】\n"
+        "作者自己设的私密，意思是「别给人看」；豆瓣锁定的私密，意思是它公开过、\n"
+        "然后被拿下了——后者恰恰是这份存档存在的理由。合成一个布尔值的话，下游只有\n"
+        "两种做法，而两种都错：一律发出去，等于把作者藏起来的东西公开；一律藏起来，\n"
+        "等于这份存档替豆瓣把它二次消音，而且不留痕迹给任何人发现。\n"
+        "\n"
+        "判据是【豆瓣有没有自己出面解释】（`notice-info-type-4` 那条通告），不是措辞、\n"
+        "也不是模板。两种模板的隐私标记长得完全不同（旧的在页脚、新的在 `topic-meta`\n"
+        "里），所以这里两种各放一篇，免得实现把「新模板」当成「作者设的」。\n"
+        "\n"
+        "第三篇是对照：同一个旧模板、没有任何标记，必须是 public——而不是 unknown，\n"
+        "否则这个字段对绝大多数日记都没有意义。\n"
+        "解析器必须：3 篇长文，且三篇的 (visibility, restricted_by) 各是各的。",
+        {
+            "longform": 3,
+            "longform_restriction": {
+                "https://www.douban.com/note/872015292/": ["public", None],
+                "https://www.douban.com/note/868128497/": ["private", "platform"],
+                "https://www.douban.com/topic/499256241/": ["private", "author"],
+            },
+        },
+    )
+    TOPIC = ("note.item", "note.item")
+    make_bundle(b, "20260907T085647Z-c10002",
+                [(*NOTE, "ok", T1, note_page("872015292", "一篇没有任何标记的日记。", 10)),
+                 (*NOTE, "ok", T1, note_page("868128497", "一篇被豆瓣锁掉的日记。", 11,
+                                             private=True, censored=True)),
+                 (*TOPIC, "ok", T1, topic_page("499256241", "一篇作者自己设成私密的日记。",
+                                               private=True))],
+                crawl_state=[cs("note.item", intent="note.item")])
+
+
 def main():
     (HERE / "cases").mkdir(exist_ok=True)
     c_login_is_not_content()
@@ -694,6 +775,7 @@ def main():
     c_action_not_forced_into_status()
     c_view_counter_is_not_an_edit()
     c_longform_body_is_not_the_summary()
+    c_censorship_is_not_privacy()
     print("用例已生成。")
 
 

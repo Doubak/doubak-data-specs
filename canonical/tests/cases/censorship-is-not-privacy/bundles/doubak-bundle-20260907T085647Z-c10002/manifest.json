@@ -1,6 +1,6 @@
 {
   "spec_version": "bundle/1.1",
-  "bundle_id": "20260728T101500Z-c10001",
+  "bundle_id": "20260907T085647Z-c10002",
   "previous_bundle_id": null,
   "status": "complete",
   "created_at": "2026-07-28T10:15:00+08:00",
@@ -16,18 +16,18 @@
   "timezone_assumption": "Asia/Shanghai",
   "segments": [
     {
-      "filename": "data-20260728T101500Z-c10001-00001.warc.gz",
-      "bytes": 978,
-      "sha256": "5018a43a71006a2ffd09f0553c8e2f0a773feb3ecb99155f9351dbe5c0894b32",
-      "record_count": 1,
-      "first_capture_id": "20260728T101500Z-c10001#000001",
-      "last_capture_id": "20260728T101500Z-c10001#000001"
+      "filename": "data-20260907T085647Z-c10002-00001.warc.gz",
+      "bytes": 2430,
+      "sha256": "76304b8a9d3caf721047959b6a40c40f65d6af0a1bd4103a6f12ab700113747e",
+      "record_count": 3,
+      "first_capture_id": "20260907T085647Z-c10002#000001",
+      "last_capture_id": "20260907T085647Z-c10002#000003"
     }
   ],
   "index": {
-    "filename": "index-20260728T101500Z-c10001.ndjson",
-    "sha256": "2a66cf897882b26038afe2d7f73ad574201450ae6ed2bfb0a8de1d4d7a2a11d0",
-    "line_count": 1
+    "filename": "index-20260907T085647Z-c10002.ndjson",
+    "sha256": "ec381a753911effa5261f8382e0bf800fde95f7024c288efe24594f9d1b6f11e",
+    "line_count": 3
   },
   "coverage": [],
   "crawl_state": [

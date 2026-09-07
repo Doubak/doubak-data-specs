@@ -1,0 +1,17 @@
+{
+  "longform": 3,
+  "longform_restriction": {
+    "https://www.douban.com/note/872015292/": [
+      "public",
+      null
+    ],
+    "https://www.douban.com/note/868128497/": [
+      "private",
+      "platform"
+    ],
+    "https://www.douban.com/topic/499256241/": [
+      "private",
+      "author"
+    ]
+  }
+}
