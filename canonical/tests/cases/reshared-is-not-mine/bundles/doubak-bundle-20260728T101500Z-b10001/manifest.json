@@ -17,8 +17,8 @@
   "segments": [
     {
       "filename": "data-20260728T101500Z-b10001-00001.warc.gz",
-      "bytes": 1017,
-      "sha256": "3ec85cfce35169e4e35f5b6630ae39edf85de013324c07aebbc7d15e6dd7f5bc",
+      "bytes": 1033,
+      "sha256": "011f04c690ded850cb39bb73aa2682c8d97cd912703c87f253ecd85f338bcd0f",
       "record_count": 1,
       "first_capture_id": "20260728T101500Z-b10001#000001",
       "last_capture_id": "20260728T101500Z-b10001#000001"
@@ -26,7 +26,7 @@
   ],
   "index": {
     "filename": "index-20260728T101500Z-b10001.ndjson",
-    "sha256": "6ad1b72f94989d70bac040c81576a28618705ef5599386e77122a3c08808f7a5",
+    "sha256": "150da731ee6d2a4b615a0ce76c7bebf79070aab3b5bd0f68aee357d3c0daf9f1",
     "line_count": 1
   },
   "coverage": [],

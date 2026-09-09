@@ -460,13 +460,18 @@ def broadcast_page(items, owner="82160871"):
             f"<blockquote>{stars}<p>{it['text']}</p></blockquote>"
             if it.get("text") or stars else ""
         )
+        # 真实页面是**两层**：外层 `new-status status-wrapper`，内层 `status-item`。
+        # 只有作者本人看得见的那些，`private` 写在【内层】的 class 上——外层没有这个
+        # 词，所以「整段里找 private」会被正文里写着 private 的公开广播骗到。
+        item_cls = "status-item private" if it.get("private") else "status-item"
         out.append(
             f'<div class="new-status status-wrapper" data-sid="{it["sid"]}" data-uid="{uid}">'
+            f'<div class="{item_cls}" data-sid="{it["sid"]}" data-uid="{uid}">'
             f'<a class="lnk-people">MewX</a> {it.get("action", "想看")}'
             f'<span class="created_at" title="{it["at"]}">x</span>{quote}'
             f'<div data-target-type="movie" data-object-id="{it.get("target", "1292052")}"></div>'
             f'<div data-status-url="https://www.douban.com/people/example/status/{it["sid"]}/"></div>'
-            "</div>"
+            "</div></div>"
         )
     nav = '<li class="nav-user-account"><a href="/accounts/logout">退出</a></li>'
     return (
@@ -727,6 +732,46 @@ def c_longform_body_is_not_the_summary():
                 crawl_state=[cs("note.item", intent="note.item")])
 
 
+def c_own_timeline_is_not_public():
+    b = case(
+        "own-timeline-is-not-public",
+        "【抓取跑在用户自己的登录态下，所以时间线上有别人看不到的东西】\n"
+        "豆瓣发一篇私密日记时会同步一条广播，正文一字不差。那条广播只有作者本人\n"
+        "看得见，而在页面上它与公开广播的唯一区别是【内层 `div.status-item` 的 class\n"
+        "多一个 `private`】——豆瓣不在广播上出面说明理由，所以这里没有 `restricted_by`\n"
+        "那样的东西可分。\n"
+        "\n"
+        "不读这个 class 的后果不是「少一个字段」：canonical 里两者无从分辨，下游默认\n"
+        "照发，于是一篇私密日记的全文出现在生成站点的首页上。这正是实测发生过的事。\n"
+        "\n"
+        "三条要一起钉住，少一条都能被一个看起来合理的实现绕过：\n"
+        "\n"
+        "1. 判据在【内层】。外层 `new-status status-wrapper` 上没有这个词，所以\n"
+        "   「整段里有没有 private」会把第 3 条那种广播误判成私密。\n"
+        "2. class 按 token 比，不按前缀比。豆瓣哪天写成 `private status-item`，\n"
+        "   按前缀比就整段认不出容器，于是【所有】广播一起变成 null——而 null 在\n"
+        "   下游按私密处理，一次改版就能把整条时间线从站点上抹掉。\n"
+        "3. 正文里出现 `private` 的公开广播不算私密。这是【结构判据而非文字判据】\n"
+        "   的又一例，与「（全文）必须结构性地认」「日记正文里写着仅自己可见不算」同一条。",
+        {"broadcasts": 3, "broadcast_visibility": {
+            "9001": "private", "9002": "public", "9003": "public"}},
+    )
+    make_bundle(b, "20260728T101500Z-b70001", [(
+        *BC, "ok", T1,
+        broadcast_page([
+            # ① 私密：内层 class 上有 private
+            {"sid": "9001", "at": "2026-07-01 10:00:00", "action": "说",
+             "text": "就反正是一篇私密日记", "private": True},
+            # ② 公开：同样的形状，没有那个词
+            {"sid": "9002", "at": "2026-07-01 11:00:00", "action": "说",
+             "text": "一条普通的公开广播"},
+            # ③ 诱饵：正文里写着 private 的【公开】广播
+            {"sid": "9003", "at": "2026-07-01 12:00:00", "action": "说",
+             "text": "I set that note to private yesterday"},
+        ]),
+    )], crawl_state=[cs("broadcast.timeline", intent="broadcast.timeline")])
+
+
 def c_censorship_is_not_privacy():
     b = case(
         "censorship-is-not-privacy",
@@ -793,6 +838,7 @@ def main():
     c_view_counter_is_not_an_edit()
     c_longform_body_is_not_the_summary()
     c_censorship_is_not_privacy()
+    c_own_timeline_is_not_public()
     print("用例已生成。")
 
 
