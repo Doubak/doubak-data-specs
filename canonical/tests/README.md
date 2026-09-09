@@ -39,6 +39,7 @@ cases/<用例名>/
 | `longform` / `longform_revisions` | 日记与评论的记录数 / 修订数 |
 | `longform_body_contains` | 正文里必须出现的子串 |
 | `longform_restriction` | 按 URL 逐篇断言 `[visibility, restricted_by]` —— **是逐篇的映射，不是集合**：只断言「出现过 author 和 platform」的话，把两篇的判断整个对调也照样绿 |
+| `broadcast_visibility` | 按 sid 逐条断言 `visibility` —— 同样**是映射不是集合**：只断言「出现过 private」的话，把私密那条与公开那条对调也照样绿，而对调正是最要命的错法 |
 
 **记录数、修订数、观测数是三个不同的量**，别只断言前两个。真实撞到过：广播抽取器
 去掉去重之后，记录数与修订数**都还是 1**（按 sid 归并会把重复合起来），只有观测数
