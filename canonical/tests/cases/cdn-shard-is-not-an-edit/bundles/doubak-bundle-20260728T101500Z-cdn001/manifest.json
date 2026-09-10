@@ -1,0 +1,57 @@
+{
+  "spec_version": "bundle/1.1",
+  "bundle_id": "20260728T101500Z-cdn001",
+  "previous_bundle_id": null,
+  "status": "complete",
+  "created_at": "2026-07-28T10:15:00+08:00",
+  "completed_at": "2026-07-28T10:16:00+08:00",
+  "producer": {
+    "name": "doubak-conformance",
+    "version": "0"
+  },
+  "account": {
+    "user_id": "82160871",
+    "username": "example"
+  },
+  "timezone_assumption": "Asia/Shanghai",
+  "segments": [
+    {
+      "filename": "data-20260728T101500Z-cdn001-00001.warc.gz",
+      "bytes": 1042,
+      "sha256": "be4259062a95cdd33aa3cb37953e3e402163d9acab5dd2c17cb5cb5998d04479",
+      "record_count": 1,
+      "first_capture_id": "20260728T101500Z-cdn001#000001",
+      "last_capture_id": "20260728T101500Z-cdn001#000001"
+    }
+  ],
+  "index": {
+    "filename": "index-20260728T101500Z-cdn001.ndjson",
+    "sha256": "c5a534397e85d5fb290aa99be6b67661204a3d5109dcb0ebeb69535748523d51",
+    "line_count": 1
+  },
+  "coverage": [],
+  "crawl_state": [
+    {
+      "route_key": "interest.movie.collect",
+      "intent": "interest.list.movie.collect",
+      "high_water_time": "2026-07-01T00:00:00+08:00",
+      "high_water_raw": "2026-07-01",
+      "high_water_ids": [],
+      "low_water_time": null,
+      "low_water_raw": null,
+      "floor_time": null,
+      "floor_from_bundle_id": null,
+      "enumeration": "full",
+      "contiguous": true,
+      "gaps": [],
+      "advanced": true,
+      "completed_at": "2026-07-28T10:16:00+08:00",
+      "bundle_id": "x"
+    }
+  ],
+  "counts": {
+    "by_verdict": {},
+    "by_surface": {},
+    "by_intent": {}
+  }
+}

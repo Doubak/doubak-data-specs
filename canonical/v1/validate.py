@@ -34,7 +34,46 @@ FILES = {
     "doulists.ndjson": "doulist.schema.json",
 }
 
+# 【摘要键与 fields 键必须一一对应】，每种记录各有一组【明写出来的】例外。
+#
+# 一个字段没有摘要，含义是「它不参与修订判定」——那是个决定，不是漏算。可这两件事
+# 在数据上长得一模一样，所以这里逐条核对：多一个少一个都报错。没有这条检查的话，
+# 「忘了给某个字段算摘要」会静默表现成「这个字段不参与修订判定」，而症状是**该开的
+# 修订没开**——这个项目最怕的那种错：只有去数才看得见。
+#
+# canonical/1.1 起生效（1.0 的产出里 cover_url 是有摘要的，那时它还没有 key）。
+DIGEST_EXEMPT = {
+    "subject.schema.json": {"cover_url"},   # 判据是 cover_url_key，见 subject.schema.json
+}
+
 _cache: dict[str, dict] = {}
+
+
+def minor_of(record: dict) -> int:
+    """`canonical/1.7` → 7；读不出来就当 0（最宽松，不会把老数据判成不合规）。"""
+    m = re.match(r"^canonical/1\.(\d+)$", str(record.get("canonical_version", "")))
+    return int(m.group(1)) if m else 0
+
+
+def check_digest_coverage(record: dict, sname: str, errs: list) -> None:
+    """摘要的键集，对着 fields 的键集减去那组例外。"""
+    if minor_of(record) < 1:
+        return
+    exempt = DIGEST_EXEMPT.get(sname, set())
+    for i, rev in enumerate(record.get("revisions") or []):
+        if not isinstance(rev, dict):
+            continue
+        fields, digests = rev.get("fields"), rev.get("digests")
+        if not isinstance(fields, dict) or not isinstance(digests, dict):
+            continue
+        want = set(fields) - exempt
+        have = set(digests)
+        for k in sorted(want - have):
+            errs.append(f"$.revisions[{i}].digests: 少了 {k} 的摘要"
+                        f"（没有摘要 = 不参与修订判定，那必须写进 DIGEST_EXEMPT）")
+        for k in sorted(have - want):
+            why = "它在例外名单里，不该有摘要" if k in exempt else "fields 里根本没有这个字段"
+            errs.append(f"$.revisions[{i}].digests: 多了 {k} 的摘要（{why}）")
 
 
 def load(name: str) -> dict:
@@ -167,7 +206,10 @@ def main() -> int:
                 continue
             n += 1
             errs: list = []
-            check(json.loads(line), schema, sname, "$", errs, unknown)
+            record = json.loads(line)
+            check(record, schema, sname, "$", errs, unknown)
+            # schema 表达不了「两组键要对上」，所以单独查一遍。
+            check_digest_coverage(record, sname, errs)
             if errs:
                 bad += 1
                 if bad <= 3:

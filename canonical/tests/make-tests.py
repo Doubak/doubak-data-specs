@@ -52,10 +52,12 @@ def list_page(items, logged_in=True, claimed=None):
         rating = f'<span class="rating{it["rating"]}-t"></span>' if it.get("rating") else ""
         tags = f'<span class="tags">标签: {it["tags"]}</span>' if it.get("tags") else ""
         comment = f'<span class="comment">{it["comment"]}</span>' if it.get("comment") else ""
+        # 封面地址可以逐条指定 —— cdn-shard-is-not-an-edit 要让两份档案只差一个分片主机。
+        cover = it.get("cover") or f'https://img1.doubanio.com/view/photo/s_ratio_poster/public/p{it["id"]}.jpg'
         rows.append(
             f'<div class="item comment-item" data-cid="{it["cid"]}">'
             f'<div class="pic"><a href="https://movie.douban.com/subject/{it["id"]}/">'
-            f'<img src="https://img1.doubanio.com/view/photo/s_ratio_poster/public/p{it["id"]}.jpg"></a></div>'
+            f'<img src="{cover}"></a></div>'
             f'<li class="title"><a><em>{it.get("title", "片名")}</em></a></li>'
             f'<li class="intro">{it.get("meta", "2020 / 导演 / 剧情")}</li>'
             f'{rating}<span class="date">{it["date"]}</span>{tags}{comment}'
@@ -388,6 +390,51 @@ def c_catalog_churn_is_not_user_edit():
     make_bundle(b, "20260804T101500Z-eeeee2",
                 [(*ROUTE, "ok", T2, list_page([{**it, "meta": "2027(未定) / 甲 / 乙"}]))],
                 previous="20260728T101500Z-eeeee1",
+                crawl_state=[cs("interest.movie.collect")])
+
+
+def c_cdn_shard_is_not_an_edit():
+    b = case(
+        "cdn-shard-is-not-an-edit",
+        "【封面换了 CDN 分片不是编辑，换了图才是】\n"
+        "两个作品，两份档案。作品 701 的封面只有主机变了（img1 → img3），路径一模一样\n"
+        "——同一张图；作品 702 的封面**图片 id 变了**（p702a → p702b），那是真的换了封面。\n"
+        "实测：豆瓣某个时点会把图挪一次分片（436197 条路径里，同一份档案内主机不一致的\n"
+        "0 条；589 张海报各只挪过一次、没有一张挪回去），而这在全量真实档案上凭空造出\n"
+        "**111 条作品修订**。\n"
+        "**两个方向都钉。** 只钉「不许多」的话，把 cover_url 从 fields 里整个删掉也是\n"
+        "绿的，而那是真的丢数据；只钉「不许少」的话，规则删掉也是绿的。\n"
+        "解析器必须：2 个作品、3 条作品修订（701 一条，702 两条）。",
+        {
+            "subjects": 2, "subject_revisions": 3, "marks": 2, "mark_revisions": 2,
+            # 逐版的封面地址。**这一条才是「不许少」那半的判据**：只比修订条数的话，
+            # 把 cover_url 从 fields 里整个删掉也是绿的（key 还在，条数不变）。
+            # 701 那条留的是 **img1**，不是最后看到的 img3 —— 一条修订的 fields
+            # 就是「开张那一刻页面这么说」。
+            "subject_covers": [
+                "701 https://img1.doubanio.com/view/photo/s_ratio_poster/public/p701a.jpg",
+                "702 https://img1.doubanio.com/view/photo/s_ratio_poster/public/p702a.jpg"
+                " \u2192 https://img1.doubanio.com/view/photo/s_ratio_poster/public/p702b.jpg",
+            ],
+        },
+    )
+    C = "https://img{}.doubanio.com/view/photo/s_ratio_poster/public/{}.jpg"
+    keep = {"id": "701", "cid": "9701", "date": "2026-07-01", "rating": 4, "comment": "同一张图"}
+    swap = {"id": "702", "cid": "9702", "date": "2026-07-02", "rating": 3, "comment": "换了封面"}
+    make_bundle(b, "20260728T101500Z-cdn001",
+                [(*ROUTE, "ok", T1, list_page([
+                    {**keep, "cover": C.format(1, "p701a")},
+                    {**swap, "cover": C.format(1, "p702a")},
+                ]))],
+                crawl_state=[cs("interest.movie.collect")])
+    make_bundle(b, "20260804T101500Z-cdn002",
+                [(*ROUTE, "ok", T2, list_page([
+                    # 只有主机变了 —— 不得产生第二条修订
+                    {**keep, "cover": C.format(3, "p701a")},
+                    # 图片 id 变了 —— 必须产生第二条修订
+                    {**swap, "cover": C.format(1, "p702b")},
+                ]))],
+                previous="20260728T101500Z-cdn001",
                 crawl_state=[cs("interest.movie.collect")])
 
 
@@ -827,6 +874,7 @@ def main():
     c_aborted_still_readable()
     c_catalog_churn_is_not_user_edit()
     c_status_transition_is_one_record()
+    c_cdn_shard_is_not_an_edit()
     c_unknown_verdict_is_not_ok()
     c_no_manifest_still_readable()
     c_broadcast_is_immutable()

@@ -1,0 +1,107 @@
+{
+  "canonical_version": "canonical/1.1",
+  "medium": "game",
+  "id": "11540976",
+  "url": "https://www.douban.com/game/11540976/",
+  "upstream_deleted": false,
+  "revisions": [
+    {
+      "parser_version": "doubak-data-parser/0.0.0-example",
+      "first_observed_at": "2022-12-27T09:05:00+08:00",
+      "last_observed_at": "2024-08-11T14:39:00+08:00",
+      "fields": {
+        "title": "神秘海域3：德雷克的诡计 Uncharted 3: Drake's Deception",
+        "aliases": null,
+        "info": null,
+        "cover_url": "https://img1.doubanio.com/lpic/s28047727.jpg",
+        "cover_url_key": "https://img.doubanio.com/lpic/s28047727.jpg",
+        "raw_meta": "PS4 / PS3 / 射击 / 冒险 / 动作 / 2011-11-01"
+      },
+      "digests": {
+        "title": "sha256:6aa11a651e7f6f990baa340e78768e04c5ab7fe9197b0e4109400e727b42f90d",
+        "aliases": null,
+        "info": null,
+        "cover_url_key": "sha256:f0b38cf8af836534a487c08f3ce8989b67b2df913a97e8591418aedaceb6f502",
+        "raw_meta": "sha256:bdc4d8f35c6b936fcf70e778852659c19b7c3d15b78160c790dcafdb463f9856"
+      },
+      "observations": [
+        {
+          "bundle_id": "20221227T090500Z-8a5722",
+          "capture_ids": [
+            "20221227T090500Z-8a5722#000002"
+          ],
+          "observed_at": "2022-12-27T09:05:00+08:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20231218T095900Z-ac3bcb",
+          "capture_ids": [
+            "20231218T095900Z-ac3bcb#000753"
+          ],
+          "observed_at": "2023-12-18T10:53:00+08:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20240811T121600Z-4983ef",
+          "capture_ids": [
+            "20240811T121600Z-4983ef#000267"
+          ],
+          "observed_at": "2024-08-11T14:39:00+08:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.0.0-example",
+      "first_observed_at": "2026-07-31T15:24:43+10:00",
+      "last_observed_at": "2026-09-04T09:48:49+10:00",
+      "fields": {
+        "title": "神秘海域3：德雷克的诡计 Uncharted 3: Drake's Deception",
+        "aliases": null,
+        "info": null,
+        "cover_url": "https://img3.doubanio.com/lpic/s28418243.jpg",
+        "cover_url_key": "https://img.doubanio.com/lpic/s28418243.jpg",
+        "raw_meta": "PS4 / PS3 / 射击 / 冒险 / 动作 / 2011-11-01"
+      },
+      "digests": {
+        "title": "sha256:6aa11a651e7f6f990baa340e78768e04c5ab7fe9197b0e4109400e727b42f90d",
+        "aliases": null,
+        "info": null,
+        "cover_url_key": "sha256:2a17dbff978e46cbdff242bad22745ac8ff3c98aaa9e4adba80ad7f47bb5d8a7",
+        "raw_meta": "sha256:bdc4d8f35c6b936fcf70e778852659c19b7c3d15b78160c790dcafdb463f9856"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260731T051333Z-786e5c",
+          "capture_ids": [
+            "20260731T051333Z-786e5c#000217"
+          ],
+          "observed_at": "2026-07-31T15:24:43+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260801T005010Z-3eef52",
+          "capture_ids": [
+            "20260801T005010Z-3eef52#000217"
+          ],
+          "observed_at": "2026-08-01T11:02:06+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260903T232811Z-b3c2b6",
+          "capture_ids": [
+            "20260903T232811Z-b3c2b6#000368"
+          ],
+          "observed_at": "2026-09-04T09:48:49+10:00",
+          "absence_authority": "whole_route",
+          "surface": "html"
+        }
+      ]
+    }
+  ]
+}

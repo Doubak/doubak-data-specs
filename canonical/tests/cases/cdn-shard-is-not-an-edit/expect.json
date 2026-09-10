@@ -1,0 +1,10 @@
+{
+  "subjects": 2,
+  "subject_revisions": 3,
+  "marks": 2,
+  "mark_revisions": 2,
+  "subject_covers": [
+    "701 https://img1.doubanio.com/view/photo/s_ratio_poster/public/p701a.jpg",
+    "702 https://img1.doubanio.com/view/photo/s_ratio_poster/public/p702a.jpg → https://img1.doubanio.com/view/photo/s_ratio_poster/public/p702b.jpg"
+  ]
+}

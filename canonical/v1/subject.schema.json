@@ -63,7 +63,11 @@
             },
             "cover_url": {
               "type": ["string", "null"],
-              "description": "封面图的 URL，原样保留（含尺寸参数，不归一化）。\n\n图片字节本身在 bundle 的 catalog-* 段里，通过 observations 的 capture_ids 可达。这里只存 URL——canonical 是文本，不装二进制。"
+              "description": "封面图的 URL，原样保留（含尺寸参数与 CDN 分片，不归一化）。\n\n图片字节本身在 bundle 的 catalog-* 段里，通过 observations 的 capture_ids 可达。这里只存 URL——canonical 是文本，不装二进制。\n\n【1.1 起：它没有摘要，判据是 cover_url_key】所以【它不参与修订判定】，也因此【它不保证是最新观测到的那一个】：分片变了而海报没变时不会开新修订，这一条留着的是该修订开张时看到的那个值。这是对的——一条修订的 fields 就是「first_observed_at 那一刻页面这么说」，为一个字段破例会让读者读错另外二十个。最新那个原始值一个字节都没丢，它在 WARC 里。\n\n【实测这不是噪声，是豆瓣真的挪过一次图】436197 条图片路径里，同一份档案内主机不一致的 0 条；589 张海报的主机变过，每张只变一次、没有一张换回去。所以它属于「真实但没有意义的变化」那一类（同 `(N 有用)` 计数、`1740人浏览`），不是「每次渲染都不一样」那一类。"
+            },
+            "cover_url_key": {
+              "type": ["string", "null"],
+              "description": "cover_url 的【索引】：把量过的 CDN 分片主机抹平之后的结果。\n\n【事实与索引并存，索引不覆盖事实】——与 bundle 的 url / url_key 是同一条规矩，连理由都一样：将来发现新的分片家族可以对存量重算 key，而 cover_url 永远不动。\n\n【规则只认量过的那一族，其余原样不动】`^https?://img\\d+\\.doubanio\\.com/` 的主机换成 `img.doubanio.com`（一个占位主机，【不要去取它】）；别的形状一律照抄。实测档案里除 img1/img2/img3/img9 之外还有 `qnmob3.doubanio.com`，所以这里【不得】把图片主机当成闭集——这条在 CLAUDE.md 里是明令。\n\n【只许抹掉不携带身份的部分】主机可以抹，是因为路径里的图片 id 已经唯一标识了这张图；实测 5820 个原始值收成 5231 个 key，589 个 key 各吃掉一个原始值，而【一个 key 底下出现两条不同路径的：0 个】。尺寸段（s_ratio_poster / m / small）【携带身份】——不同尺寸是不同的字节——所以它绝不能被抹掉，抹了就是两张不同的图被静默并成一张。\n\n【这里证不了的一件事，写下来】档案里没有任何一条路径被从两个主机各抓过一次（11997 条资源捕获 / 3108 条路径 / 0 条），所以「几个分片提供的字节完全相同」本地无法证实。因此这个 key 只用来做判据，绝不用来【改写】cover_url——那才需要那个证据。"
             },
             "raw_meta": {
               "type": ["string", "null"],
@@ -74,7 +78,8 @@
 
         "digests": {
           "type": "object",
-          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" }
+          "additionalProperties": { "$ref": "common.schema.json#/$defs/digest" },
+          "description": "逐字段摘要，【键必须与 fields 的键一致】，只有下面这一处例外。\n\n【1.1 起：cover_url 没有摘要】它是事实，判据是 cover_url_key（见那一条）。一个没有摘要的字段，含义是【它不参与修订判定】——这是个显式的声明，不是漏写：validate.py 会核对这组键，多一个少一个都报错，所以「漏算了一个摘要」不会伪装成「这个字段不参与判定」。\n\n【为什么不是把摘要改成按 key 算】那样 digests[k] 就不再是 fields[k] 的摘要了，而且【只有这一个字段】这样——2040 年读这份数据的人得先读到某处声明才知道。缺一个键是看得见的，重新定义一个键的含义是看不见的。"
         },
 
         "observations": {
