@@ -124,7 +124,7 @@ else:
 src = CANON.read_text(encoding="utf-8")
 check("canonical 校验器也把附注拼进最后那句，而不是只在上面提一句",
       'print(f"\\n全部通过{caveat}"' in src)
-check("canonical 的附注说得出「没查的是哪几条」",
+check("canonical 的附注明确标明未检查的项目",
       "本校验器不认识" in src)
 
 print(f"\n{'全部通过' if failed == 0 else f'{failed} 条未达预期'}")
