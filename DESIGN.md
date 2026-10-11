@@ -360,6 +360,7 @@ review.list.<medium> / review.item   影评书评
 annotation.list / annotation.item    读书笔记
 photo.album_list / photo.album / photo.item
 doulist.list / doulist.item
+group.overview / group.publish / group.item / group.joins
 doumail.list / doumail.thread        豆邮（私信）
 social.following / social.follower / social.blacklist
 asset.image.user_upload              用户上传的图

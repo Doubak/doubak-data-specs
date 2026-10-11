@@ -34,6 +34,10 @@
     "photo.item": "单张照片页",
     "doulist.list": "豆列列表；其后接 ownership，如 doulist.list.created。**必须带 ownership**——「我编的」与「我关注的」是两类完全不同的东西，而列表页第 2 页的 URL 之外看不出是哪一类",
     "doulist.item": "单个豆列的内容页。用户自己写的条目评语在这里，是这条路线真正的价值所在",
+    "group.overview": "用户的小组主页总览",
+    "group.publish": "用户发布的小组话题列表",
+    "group.item": "单篇小组话题正文（用户发布的话题正文，含标题、正文文本与上传附图）",
+    "group.joins": "用户加入与管理的小组列表",
     "redirect.shortlink": "豆瓣自家的短链跳转（douc.cc）。必须跟随并把 3xx 响应本身也写进 WARC——只存短链等于在档案里留一个指向第三方跳转服务的死指针",
     "asset.image.user_upload": "用户自己上传的图片（广播附图、相册、正文内嵌）——写入 assets-* 段。转发进来的、属于他人的附图不算",
     "asset.image.catalog_thumbnail": "列表页上的目录缩略图——写入 catalog-* 段",
@@ -97,7 +101,7 @@
   "known_unsupported": {
     "description": "豆瓣上确实存在、但 doubak 不抓的分类。记录在此是为了让实现者知道还有什么在那儿——这不是预留，不需要为它们分配任何东西。将来要支持，直接加 intent 取值即可。",
     "out_of_scope": {
-      "group": "小组（社区讨论与他人回帖）。他人内容且体量无边界，不在范围内；用户本人发布的主题与加入的小组属于有界个人资产，按独立路线规划",
+      "group": "小组公共广场与他人互动（社区广场公共讨论、他人回帖等）。他人内容且体量无边界，不在范围内；用户本人发布的主题列表（group.publish）、正文（group.item）、主页（group.overview）与加入的小组（group.joins）属于有界个人资产，已通过对应路线支持",
       "site": "小站",
       "activity": "同城活动",
       "thing": "豆品",
