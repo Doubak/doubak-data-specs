@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/album.schema.json",
+  "title": "doubak canonical v1 — 一个个人相册（albums.ndjson 的一行）",
+  "description": "用户自己创建的相册：相册标题、描述、创建/更新时间，以及相册包含的照片列表与大图 URL。\n\n【个人自建相册与作品相册严格区分】上传至图书/电影/音乐/游戏等条目公共相册的照片属于条目目录资产，不在本规范内（归入 UNSUPPORTED_ROUTES）；个人在 `/people/<user>/photos` 下创建的相册为不可替代的个人数字资产。\n\n【原图大图来自 asset.photo_image 路线】照片条目记录包含大图 URL（`/view/photo/large/`），原始字节存放在 bundle 的 assets 段中。",
+  "type": "object",
+  "required": [
+    "canonical_version",
+    "identity_layer",
+    "upstream_id",
+    "account",
+    "revisions"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "canonical_version": {
+      "$ref": "common.schema.json#/$defs/canonical_version"
+    },
+    "identity_layer": {
+      "$ref": "common.schema.json#/$defs/identity_layer",
+      "description": "相册【没有退化层】：id 就在 URL 里（`/photos/album/<id>/`），恒为 `upstream_id`。"
+    },
+    "upstream_id": {
+      "type": "string",
+      "description": "相册数字 id。"
+    },
+    "account": {
+      "type": "object",
+      "description": "相册归属的账号。",
+      "required": [
+        "user_id"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。相册标题、描述可编辑，增删照片均会产生新修订。",
+      "items": {
+        "$ref": "#/$defs/revision"
+      }
+    }
+  },
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": [
+        "parser_version",
+        "first_observed_at",
+        "last_observed_at",
+        "fields",
+        "digests",
+        "observations"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": {
+          "$ref": "common.schema.json#/$defs/parser_version"
+        },
+        "first_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "last_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "fields": {
+          "type": "object",
+          "description": "这一版的字段快照。来自页面的字段一个都不设必填。",
+          "additionalProperties": true,
+          "properties": {
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "相册标题。"
+            },
+            "desc": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "相册简介描述。"
+            },
+            "created_at": {
+              "oneOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/partial_date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "updated_at": {
+              "oneOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/partial_date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "claimed_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "相册页声称的照片总数（如「共1055张照片」）。"
+            },
+            "cover_photo_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "相册封面图所对应的照片 ID。"
+            },
+            "privacy": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "public",
+                "author",
+                null
+              ],
+              "description": "相册可见性设置。"
+            },
+            "photos": {
+              "type": "array",
+              "description": "相册内按顺序展示的照片列表。",
+              "items": {
+                "$ref": "#/$defs/photo_item"
+              }
+            }
+          }
+        },
+        "digests": {
+          "type": "object",
+          "description": "逐字段摘要。键集必须与 `fields` 严格一致。",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "desc": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "created_at": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "updated_at": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "claimed_count": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "cover_photo_id": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "privacy": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "photos": {
+              "$ref": "common.schema.json#/$defs/digest"
+            }
+          }
+        },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/observation"
+          }
+        }
+      }
+    },
+    "photo_item": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "照片数字 ID（例如 /photos/photo/2918226736/ 中的数字）。"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "照片详情页 URL。"
+        },
+        "image_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "全尺寸大图 URL（/view/photo/large/...）。"
+        },
+        "thumbnail_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "缩略图 URL（/view/photo/m/... 或 albumicon）。"
+        },
+        "caption": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "照片说明/配字。"
+        },
+        "seq": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "在相册中的排布次序。"
+        }
+      }
+    }
+  }
+}

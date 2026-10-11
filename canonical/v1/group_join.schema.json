@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/group_join.schema.json",
+  "title": "doubak canonical v1 — 用户加入的一个豆瓣小组（group_joins.ndjson 的一行）",
+  "description": "用户加入的豆瓣小组条目：小组名称、小组 ID、角色（普通成员或管理员）、成员人数与小组头像。\n\n【小组关系为成员资格记录】用户加入的小组反映其社区兴趣与所属圈子。小组管理或加入状态可能随时间改变（退出或职务变动）。",
+  "type": "object",
+  "required": [
+    "canonical_version",
+    "identity_layer",
+    "upstream_id",
+    "account",
+    "revisions"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "canonical_version": {
+      "$ref": "common.schema.json#/$defs/canonical_version"
+    },
+    "identity_layer": {
+      "$ref": "common.schema.json#/$defs/identity_layer",
+      "description": "小组【没有退化层】：id 就在 URL 里（`/group/<id>/`），恒为 `upstream_id`。"
+    },
+    "upstream_id": {
+      "type": "string",
+      "description": "小组数字或字母标识符（如 `623999` 或自定义别名）。"
+    },
+    "account": {
+      "type": "object",
+      "description": "加入小组的账号。",
+      "required": [
+        "user_id"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。",
+      "items": {
+        "$ref": "#/$defs/revision"
+      }
+    }
+  },
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": [
+        "parser_version",
+        "first_observed_at",
+        "last_observed_at",
+        "fields",
+        "digests",
+        "observations"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": {
+          "$ref": "common.schema.json#/$defs/parser_version"
+        },
+        "first_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "last_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "fields": {
+          "type": "object",
+          "description": "这一版的字段快照。来自页面的字段一个都不设必填。",
+          "additionalProperties": true,
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "小组名称。"
+            },
+            "role": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "member",
+                "manager",
+                null
+              ],
+              "description": "用户在小组中的角色身份：member（成员）或 manager（管理员/创建者）。"
+            },
+            "member_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "小组总人数。"
+            },
+            "icon_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "小组头像/图标 URL。"
+            }
+          }
+        },
+        "digests": {
+          "type": "object",
+          "description": "逐字段摘要。键集必须与 `fields` 严格一致。",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "role": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "member_count": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "icon_url": {
+              "$ref": "common.schema.json#/$defs/digest"
+            }
+          }
+        },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/observation"
+          }
+        }
+      }
+    }
+  }
+}

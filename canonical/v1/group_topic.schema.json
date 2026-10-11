@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://spec.doubak.com/canonical/v1/group_topic.schema.json",
+  "title": "doubak canonical v1 — 一篇用户发布的小组话题（group_topics.ndjson 的一行）",
+  "description": "用户在豆瓣小组中发起的讨论话题：标题、正文、发布时间、所属小组信息以及正文中上传的图片。\n\n【仅收录用户本人发起的讨论】他人发起的讨论、小组公共广场以及他人的回复回帖属于第三方社区动态，不在归档范围内；用户自己发布的主题内容与上传插图为用户创作的不可替代数字资产。\n\n【话题正文单独抓取】列表页（group.publish）仅含标题和链接，全文正文与内嵌图片在独立的正文页（group.item）中，归入 data 段与 assets 段。",
+  "type": "object",
+  "required": [
+    "canonical_version",
+    "identity_layer",
+    "upstream_id",
+    "account",
+    "revisions"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "canonical_version": {
+      "$ref": "common.schema.json#/$defs/canonical_version"
+    },
+    "identity_layer": {
+      "$ref": "common.schema.json#/$defs/identity_layer",
+      "description": "小组讨论【没有退化层】：id 就在 URL 里（`/group/topic/<id>/`），恒为 `upstream_id`。"
+    },
+    "upstream_id": {
+      "type": "string",
+      "description": "话题数字 id。"
+    },
+    "account": {
+      "type": "object",
+      "description": "发布该话题的账号。",
+      "required": [
+        "user_id"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "revisions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "按 `first_observed_at` 升序。话题正文可编辑，可能产生新修订。",
+      "items": {
+        "$ref": "#/$defs/revision"
+      }
+    }
+  },
+  "$defs": {
+    "revision": {
+      "type": "object",
+      "required": [
+        "parser_version",
+        "first_observed_at",
+        "last_observed_at",
+        "fields",
+        "digests",
+        "observations"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "parser_version": {
+          "$ref": "common.schema.json#/$defs/parser_version"
+        },
+        "first_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "last_observed_at": {
+          "$ref": "common.schema.json#/$defs/timestamp"
+        },
+        "fields": {
+          "type": "object",
+          "description": "这一版的字段快照。来自页面的字段一个都不设必填。",
+          "additionalProperties": true,
+          "properties": {
+            "title": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "话题标题。"
+            },
+            "body": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "话题正文文本或 Markdown。"
+            },
+            "published_at": {
+              "oneOf": [
+                {
+                  "$ref": "common.schema.json#/$defs/partial_date"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "group_id": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "所属小组数字 ID。"
+            },
+            "group_name": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "所属小组名称。"
+            },
+            "group_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "所属小组主页链接。"
+            },
+            "images": {
+              "type": "array",
+              "description": "正文中内嵌的用户上传图片列表。",
+              "items": {
+                "$ref": "#/$defs/topic_image"
+              }
+            }
+          }
+        },
+        "digests": {
+          "type": "object",
+          "description": "逐字段摘要。键集必须与 `fields` 严格一致。",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "body": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "published_at": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "group_id": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "group_name": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "group_url": {
+              "$ref": "common.schema.json#/$defs/digest"
+            },
+            "images": {
+              "$ref": "common.schema.json#/$defs/digest"
+            }
+          }
+        },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "common.schema.json#/$defs/observation"
+          }
+        }
+      }
+    },
+    "topic_image": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "图片下载 URL。"
+        },
+        "caption": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "图注说明。"
+        }
+      }
+    }
+  }
+}
