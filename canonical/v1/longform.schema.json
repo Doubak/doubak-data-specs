@@ -33,7 +33,8 @@
       "additionalProperties": true,
       "properties": {
         "user_id": { "type": "string" },
-        "username": { "type": ["string", "null"] }
+        "username": { "type": ["string", "null"] },
+        "nickname": { "type": ["string", "null"] }
       }
     },
 

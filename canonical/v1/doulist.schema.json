@@ -41,6 +41,12 @@
             "string",
             "null"
           ]
+        },
+        "nickname": {
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },
