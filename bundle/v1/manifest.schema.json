@@ -94,6 +94,13 @@
           ],
           "description": "用户名/域名。会变，不可作主键。"
         },
+        "nickname": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "豆瓣用户展示昵称（如「MewX」）。会变，不可作主键。"
+        },
         "profile_url": {
           "$ref": "common.schema.json#/$defs/url"
         }
