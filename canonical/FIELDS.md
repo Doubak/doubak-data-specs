@@ -8,6 +8,20 @@
 
 ---
 
+## 0. 账号展示资料：`account.nickname`
+
+七类用户记录（mark / broadcast / longform / doulist / album / group_topic / group_join）
+的 `account.nickname` 为可选字符串或 `null`。作品目录 subject 没有账号归属，不增加
+此字段。昵称与 `username` 都是展示资料，身份与分桶仍只由 `account.user_id` 决定。
+
+同一 UID 的多个 bundle 应先合并账号资料，再写入各类记录，包括未被新增量再次捕获的
+旧记录。按 `bundle_id` 升序合并（其 UTC 时间戳表示抓取批次先后，见 bundle §3.1），
+每个字段取最后一个非空字符串；缺失、`null` 或纯空白不会抹掉已知资料。并列时间由
+完整 `bundle_id` 定序，输入数组的顺序不得影响结果。没有已知值时写 `null`。
+
+账号资料不属于内容 `revisions.fields`，不参与字段摘要；改昵称或域名不得凭空新增
+标记、广播或长文修订，也不得跨 UID 补齐资料。已有 bundle 与 WARC 不得被改写。
+
 ## 1. 可用率：没有一个字段在所有媒介上都在
 
 | 媒介 | 条目 | 标题 | 评分 | 短评 | 标签 | 元信息 | 封面 |
