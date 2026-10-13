@@ -110,6 +110,18 @@
       ],
       "additionalProperties": true
     },
+    "crawl_scope": {
+      "type": "object",
+      "description": "抓取视角。旧档案缺失此字段时按原有本人视图处理。public 仅代表操作者可见的公开集合，永远不能授予缺失推断权限。",
+      "properties": {
+        "visibility": { "enum": ["self", "public"] },
+        "operator_mode": { "enum": ["authenticated", "anonymous"] },
+        "operator_user_id": { "type": ["string", "null"], "pattern": "^[1-9][0-9]*$", "description": "公开登录视角的操作者数字 UID，用于增量范围匹配；不包含任何登录凭据。匿名为 null。" },
+        "skip_catalog": { "type": "boolean" }
+      },
+      "required": ["visibility", "operator_mode"],
+      "additionalProperties": true
+    },
     "timezone_assumption": {
       "type": "string",
       "examples": [

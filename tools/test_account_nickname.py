@@ -18,6 +18,27 @@ SCHEMAS = [ROOT / "bundle/v1/manifest.schema.json"] + [
 
 
 class AccountNicknameTests(unittest.TestCase):
+    def test_crawl_scope_is_optional_but_known_values_are_checked(self):
+        schema = json.loads(SCHEMAS[0].read_text(encoding="utf-8"))
+        self.assertNotIn("crawl_scope", schema["required"])
+        scope_schema = schema["properties"]["crawl_scope"]
+        for value, valid in [
+            ({"visibility": "self", "operator_mode": "authenticated"}, True),
+            ({"visibility": "public", "operator_mode": "anonymous", "skip_catalog": True}, True),
+            ({"visibility": "public", "operator_mode": "anonymous", "operator_user_id": None}, True),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": "123"}, True),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": "slug"}, False),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": 123}, False),
+            ({"visibility": "private", "operator_mode": "authenticated"}, False),
+            ({"visibility": "public", "operator_mode": "anonymous", "skip_catalog": "yes"}, False),
+            ({"visibility": "public"}, False),
+        ]:
+            with self.subTest(value=value):
+                errors, unknown = [], set()
+                validator.check(value, scope_schema, "manifest", "$.crawl_scope", errors, unknown)
+                self.assertFalse(unknown)
+                self.assertEqual(not errors, valid)
+
     def check_account(self, path, account):
         schema = json.loads(path.read_text(encoding="utf-8"))["properties"]["account"]
         errors, unknown = [], set()

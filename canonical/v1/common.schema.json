@@ -53,6 +53,11 @@
       "additionalProperties": true,
       "properties": {
         "bundle_id": { "type": "string" },
+        "omitted_fields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "本次页面未展示的字段名。缺失不解释为清空；修订快照可保留更早观测的已知值，此捕获不为这些字段提供新证据。"
+        },
         "capture_ids": {
           "type": "array",
           "minItems": 1,
