@@ -47,6 +47,9 @@ jobs:
       - name: 校验器的措辞
         run: python3 tools/test_validator_output.py
 
+      - name: 账号昵称的兼容性与类型约束
+        run: python3 tools/test_account_nickname.py
+
       - name: 上报脚本自己的测试
         run: node --test tools/coveralls.test.mjs
 

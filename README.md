@@ -10,7 +10,7 @@
 
 | 目录 | 写入方 | 生命周期 | 状态 |
 |---|---|---|---|
-| [`bundle/`](bundle/) | 抓取工具与导入器 | 用户抓取完成后即**永久冻结**（原始页面无法要求用户重复抓取） | [草案 bundle/1.3](bundle/README.md) |
+| [`bundle/`](bundle/) | 抓取工具与导入器 | 用户抓取完成后即**永久冻结**（原始页面无法要求用户重复抓取） | [草案 bundle/1.4](bundle/README.md) |
 | [`canonical/`](canonical/) | 解析器 | **随时可迭代演进**（本地重新解析成本极低） | [摄取规则 + 标记与作品的 schema](canonical/README.md) |
 
 若将二者混淆为同一种格式去设计，是本项目早期最主要的经验教训。
@@ -21,7 +21,7 @@
 - **[INGESTION.md](canonical/INGESTION.md)** —— 面对多个 bundle 归档，哪些可以读取、读取后**可以得出哪些确定结论**
 - **[IDENTITY.md](canonical/IDENTITY.md)** —— 如何识别与判定跨抓取批次的同一条记录
 - **[FIELDS.md](canonical/FIELDS.md)** —— 定义可提取字段，以及哪些复合字段**不应**在解析阶段过早拆解
-- JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `common`
+- JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `doulist` / `album` / `group_topic` / `group_join` / `common`
 - [一致性用例](canonical/tests/)：17 组，重点约束**「解析器绝不得推导出的错误结论」**
 
 ### 校验
@@ -51,6 +51,11 @@ python3 validate.py examples/minimal-bundle   # 校验单个 bundle
 python3 validate.py --tests                   # 运行全量用例
 python3 validate.py --integrity-only <目录>   # 仅在底层字节损坏时报错
 ```
+
+`manifest.account` 与七类用户记录的 `account` 支持可选的 `nickname`（字符串或
+`null`）；旧归档可缺省。数字 `user_id` 仍是身份主键，昵称不参与内容修订。
+合并规则见 [canonical/FIELDS.md](canonical/FIELDS.md)，字段契约可用
+`python3 tools/test_account_nickname.py` 检查。
 
 结构性检查无需任何第三方依赖；安装 `jsonschema` 与 `referencing` 后会额外运行 schema 层校验。
 **未安装依赖时，终端输出会显式明确说明**：
