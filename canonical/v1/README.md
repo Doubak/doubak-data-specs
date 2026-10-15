@@ -118,3 +118,7 @@ description 里，一个真实例子在 [examples/subject-cdn-shard.json](exampl
 | 改错的代价 | 不可逆 | 重跑一遍 |
 
 所以这里的版本递增比 bundle 那边随意得多。**真正不能改的东西都在 bundle 里**——这正是当初把两者分开的全部意义。
+
+广播的可选 `fields.title` 保存 topic 动态自己的标题；作品卡片名仍用 `target_title`。
+没有独立标题时为 `null`，旧记录可缺省。topic 的标题链接存入记录 `url`，
+广播身份仍取 `data-sid`，不以 topic 的 `data-aid` 替代。

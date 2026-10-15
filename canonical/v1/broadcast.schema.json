@@ -54,7 +54,7 @@
         "string",
         "null"
       ],
-      "description": "`data-status-url`，指向豆瓣上这条广播。\n\n【它是外链，不是站点内部的链接】下游生成静态站时不得回退到它——那会让一份号称离线可看的档案为了一个链接去联网。"
+      "description": "`data-status-url`，或 topic 动态中与 `data-aid` 对应的标题链接，指向豆瓣上这条广播。\n\n【它是外链，不是站点内部的链接】下游生成静态站时不得回退到它——那会让一份号称离线可看的档案为了一个链接去联网。"
     },
     "revisions": {
       "type": "array",
@@ -102,6 +102,10 @@
                 }
               ],
               "description": "发布时间，实测精度到【秒】。\n\n【比标记页的日期精确，合并时不得用低精度覆盖它】同一件事在标记页上只有天。这也是广播值钱的地方之一：它给标记的状态迁移钉上了秒级的时间戳。"
+            },
+            "title": {
+              "type": ["string", "null"],
+              "description": "topic 动态自己的标题，与作品卡片 target_title 分开。旧解析器可缺省；没有独立标题时为 null。身份仍取 data-sid，topic 的 data-aid 不替代广播 ID。"
             },
             "text": {
               "type": [
