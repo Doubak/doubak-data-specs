@@ -50,6 +50,9 @@ jobs:
       - name: 账号昵称的兼容性与类型约束
         run: python3 tools/test_account_nickname.py
 
+      - name: 账号资料与旧八文件兼容性
+        run: python3 tools/test_profile.py
+
       - name: 上报脚本自己的测试
         run: node --test tools/coveralls.test.mjs
 

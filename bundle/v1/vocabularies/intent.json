@@ -42,7 +42,8 @@
     "asset.image.user_upload": "用户自己上传的图片（广播附图、相册、正文内嵌）——写入 assets-* 段。转发进来的、属于他人的附图不算",
     "asset.image.catalog_thumbnail": "列表页上的目录缩略图——写入 catalog-* 段",
     "probe.canary": "廉价探测请求，用于在恢复抓取前确认风控状态",
-    "manual.user_requested": "用户手动要求补抓的页面"
+    "manual.user_requested": "用户手动要求补抓的页面",
+    "asset.image.account_avatar": "目标账号头像；父 capture 是已核实身份的 profile.overview，保存于 assets 段。同 URL 可能换图，不跨 bundle 跳过。"
   },
   "components": {
     "medium": {

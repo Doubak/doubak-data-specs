@@ -1,0 +1,86 @@
+{
+  "canonical_version": "canonical/1.3",
+  "identity_layer": "upstream_id",
+  "upstream_id": "82160871",
+  "account": {
+    "user_id": "82160871",
+    "username": "example",
+    "nickname": null
+  },
+  "url": "https://www.douban.com/people/example/",
+  "revisions": [
+    {
+      "parser_version": "doubak-data-parser/0.16.0",
+      "first_observed_at": "2026-08-01T10:16:00+08:00",
+      "last_observed_at": "2026-08-03T10:16:00+08:00",
+      "fields": {
+        "username": "example",
+        "nickname": "Example",
+        "avatar_url": "https://img3.doubanio.com/icon/up82160871-1.jpg"
+      },
+      "digests": {
+        "username": "sha256:50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c",
+        "nickname": "sha256:d029f87e3d80f8fd9b1be67c7426b4cc1ff47b4a9d0a8461c826a59d8c5eb6cd",
+        "avatar_url": "sha256:7417578718d92ce93eeb7ec66362c57e47354a8fdc6c945cc031cb75cb9a1fca"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260801T101500Z-aaab01",
+          "capture_ids": [
+            "20260801T101500Z-aaab01#000001"
+          ],
+          "observed_at": "2026-08-01T10:16:00+08:00",
+          "absence_authority": "none",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260802T101500Z-aaab02",
+          "capture_ids": [
+            "20260802T101500Z-aaab02#000001"
+          ],
+          "observed_at": "2026-08-02T10:16:00+08:00",
+          "absence_authority": "none",
+          "surface": "html"
+        },
+        {
+          "bundle_id": "20260803T101500Z-aaab03",
+          "capture_ids": [
+            "20260803T101500Z-aaab03#000001"
+          ],
+          "observed_at": "2026-08-03T10:16:00+08:00",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "avatar_url"
+          ]
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.16.0",
+      "first_observed_at": "2026-08-04T10:16:00+08:00",
+      "last_observed_at": "2026-08-04T10:16:00+08:00",
+      "fields": {
+        "username": "example",
+        "nickname": "Example",
+        "avatar_url": null
+      },
+      "digests": {
+        "username": "sha256:50d858e0985ecc7f60418aaf0cc5ab587f42c2570a884095a9e8ccacd0f6545c",
+        "nickname": "sha256:d029f87e3d80f8fd9b1be67c7426b4cc1ff47b4a9d0a8461c826a59d8c5eb6cd",
+        "avatar_url": null
+      },
+      "observations": [
+        {
+          "bundle_id": "20260804T101500Z-aaab04",
+          "capture_ids": [
+            "20260804T101500Z-aaab04#000001"
+          ],
+          "observed_at": "2026-08-04T10:16:00+08:00",
+          "absence_authority": "none",
+          "surface": "html"
+        }
+      ]
+    }
+  ]
+}

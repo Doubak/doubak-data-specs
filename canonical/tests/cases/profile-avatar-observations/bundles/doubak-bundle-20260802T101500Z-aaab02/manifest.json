@@ -1,0 +1,39 @@
+{
+  "spec_version": "bundle/1.1",
+  "bundle_id": "20260802T101500Z-aaab02",
+  "previous_bundle_id": null,
+  "status": "complete",
+  "created_at": "2026-07-28T10:15:00+08:00",
+  "completed_at": "2026-07-28T10:16:00+08:00",
+  "producer": {
+    "name": "doubak-conformance",
+    "version": "0"
+  },
+  "account": {
+    "user_id": "82160871",
+    "username": "example"
+  },
+  "timezone_assumption": "Asia/Shanghai",
+  "segments": [
+    {
+      "filename": "data-20260802T101500Z-aaab02-00001.warc.gz",
+      "bytes": 784,
+      "sha256": "1d8b4ff05982bd5a94b72193d5c0aa55e5ad5b121fbd3381b26e067a8ace9732",
+      "record_count": 1,
+      "first_capture_id": "20260802T101500Z-aaab02#000001",
+      "last_capture_id": "20260802T101500Z-aaab02#000001"
+    }
+  ],
+  "index": {
+    "filename": "index-20260802T101500Z-aaab02.ndjson",
+    "sha256": "55f32bb0c322b9d3df07019b5e3f750d5f700e1c8fdd59441172ff7c57fb2e0c",
+    "line_count": 1
+  },
+  "coverage": [],
+  "crawl_state": [],
+  "counts": {
+    "by_verdict": {},
+    "by_surface": {},
+    "by_intent": {}
+  }
+}

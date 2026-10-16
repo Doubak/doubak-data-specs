@@ -170,3 +170,9 @@ data-cid 变了    0 条
 - **`intro` 那个无标签的 `/` 分隔串**（导演、演员、国家、片长、类型全混在一起）
   要不要在解析时拆开。倾向**不拆**：原样存字符串，拆解归 enricher——理由与
   "解析器不许猜语言标签"相同，猜错了在源页面消失之后无法挽回。
+
+## 账号资料的身份（canonical/1.3）
+
+`profile` 按数字 UID 合并，`identity_layer: upstream_id`，`upstream_id` 必须等于
+`account.user_id`。昵称、域名及头像 URL 均不是主键；头像文件名中的 UID 若与目标冲突，
+不得接受这次资料观测。没有该 bundle 的账号身份依据时，不从其他 bundle 借用归属。

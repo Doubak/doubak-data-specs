@@ -91,3 +91,6 @@ digests   aliases ·             cover_url_key · info · raw_meta · title
 因为**证不了**。档案里没有任何一条路径被从两个主机各抓过一次（11997 条资源捕获 / 3108 条路径 / 0 条），所以「几个分片提供的字节完全相同」这句话本地无法证实。把 `cover_url` 改写成某一个固定分片，就是在做一个没有证据的断言。
 
 **事实与索引并存，索引不覆盖事实**——与 bundle 的 `url` / `url_key` 是同一条规矩，连理由都一样。
+
+`profile-avatar-observations.json`：同 URL 的多次观测、未展示头像节点、明确默认头像，
+展示 omitted-field 继承与 null 清空的区别；来源为合成 conformance bundle。

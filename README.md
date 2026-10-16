@@ -76,10 +76,10 @@ python3 examples/make-minimal-bundle.py   # 偏移量与哈希摘要均严格依
 python3 tests/make-tests.py
 ```
 
-## 待实现的规范扩展：账号头像
+## 账号头像（canonical/1.3）
 
 [账号头像归档与个人站点图标设计](https://github.com/Doubak/doubak-extension/blob/main/docs/designs/account-avatar-and-site-branding.md)
-提出新增开放 intent `asset.image.account_avatar`，使用已有 asset surface、assets 段与 parent capture 关系；
-单纯扩展开放 intent 不要求升级 bundle 版本。Canonical 拟新增带修订及观测来源的 `profile.ndjson`，
-需要 schema、验证器、摄取规则和兼容样例联动。这是待实现方案，当前仍为八类 canonical 记录，
-本次没有修改有效 schema 或格式版本。
+新增开放 intent `asset.image.account_avatar`，使用已有 asset surface、assets 段与 parent capture 关系；
+单纯扩展开放 intent 不要求升级 bundle 版本。Canonical 新增带修订及观测来源的 `profile.ndjson`，
+schema、验证器、摄取规则、示例与 conformance 已同步。旧八文件 canonical 仍可验证，
+缺少 profile 文件表示没有结构化资料，不表示用户删除了头像。

@@ -220,3 +220,16 @@ canonical 里没有地方写「不知道」，就等于强迫解析器在两个�
 - **某条路线的 `floor_from_bundle_id` 指向的档案不在这批里 → 告警。** 增量只看了
   地板以上，地板底下那段谁也没看过。这是个真实的覆盖空洞，而它**看起来一切正常**：
   条数、连续性、其余自检全是好的。
+
+## 主页与头像（canonical/1.3）
+
+只摄取 `profile.overview` 的 `html` / `ok` 捕获，并再次核实目标 UID。profile 不生成
+删除事件，`absence_authority` 始终为 `none`；异常页面与缺失节点均不能清空头像。
+相同头像 URL 的新主页观测保留在同一修订中，因为 URL 不变不保证图片字节不变。
+消费者按最新明确头像观测选择图片：匹配账号 UID、主页 capture ID、直接父关系及 URL，
+且资源须为 `asset.account_avatar` / `asset.image.account_avatar` / `asset` / `ok`。
+最新明确默认头像代表无个性头像；最新头像字节缺失或损坏时报告缺图，不跨父 capture
+回退到旧图。同时间按 capture ID 排序保证确定性。
+
+旧 canonical 缺少 `profile.ndjson` 仍合法；旧 bundle 可重解析已有主页，但不能凭空
+补出未归档的图片。新生产者输出九个 NDJSON（profile 可为空），旧消费者可忽略第九文件。

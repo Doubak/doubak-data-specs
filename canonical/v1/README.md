@@ -1,7 +1,7 @@
 # canonical/v1 —— 解析器的产出格式
 
-**状态：草案，`canonical/1.2`。** 八类记录，共用同一套「记录 + 修订」骨架。
-（1.1 加了作品的 `cover_url_key`；1.2 加了个人相册与豆瓣小组数据。）
+**状态：草案，`canonical/1.3`。** 九类记录，共用同一套「记录 + 修订」骨架。
+（1.1 加了作品的 `cover_url_key`；1.2 加了个人相册与豆瓣小组数据；1.3 加了账号资料。）
 
 ```
 marks.ndjson         一行一条标记（用户写的）      mark.schema.json
@@ -12,6 +12,7 @@ doulists.ndjson      一行一个豆列（用户编的）      doulist.schema.js
 albums.ndjson        一行一个相册（用户创建）      album.schema.json
 group_topics.ndjson  一行一篇小组讨论（用户发布）  group_topic.schema.json
 group_joins.ndjson   一行一个加入的小组（用户关系） group_join.schema.json
+profile.ndjson       一行一个目标账号（资料观测）    profile.schema.json
 ```
 
 **豆列这一类的样本最少（5 份），所以它的字段【存在性】可信，「哪类豆列一定有哪个字段」的规律不可信。** 它值得单独成类的理由只有一个：每个条目上挂着用户自己写的**评语**，而那是豆瓣不导出、也无法从档案别处推出来的东西。

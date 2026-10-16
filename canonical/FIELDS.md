@@ -171,3 +171,11 @@
 - **书的 `pub` 段数最少为 0**、游戏的 `desc` 也是——说明这两个字段可以是空串。
   空串与"字段不存在"必须能分开（见 INGESTION.md §5.4）。
 - **API 面（`surface: api`）**。目前所有观测都来自 HTML 面。
+
+## 账号资料（canonical/1.3）
+
+`profile.ndjson` 的 `fields` 仅含 `username`、`nickname`、`avatar_url`。从身份已核实、
+判定为正常的目标主页身份块抽取；导航登录者、访客、签名与广播作者不属于此记录。
+未展示的字段省略，并在该次 observation 的 `omitted_fields` 中标明；已有值可以继承，
+继承不构成本次对该字段的新证据。只有身份已确认且明确显示默认头像时，`avatar_url`
+才为 null。头像字节保留于 bundle，canonical 只记录页面给出的 URL，不推测更大尺寸。

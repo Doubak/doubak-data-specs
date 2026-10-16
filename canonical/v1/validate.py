@@ -35,6 +35,7 @@ FILES = {
     "albums.ndjson": "album.schema.json",
     "group_topics.ndjson": "group_topic.schema.json",
     "group_joins.ndjson": "group_join.schema.json",
+    "profile.ndjson": "profile.schema.json",
 }
 
 # 【摘要键与 fields 键必须一一对应】，每种记录各有一组【明写出来的】例外。
@@ -213,6 +214,8 @@ def main() -> int:
             check(record, schema, sname, "$", errs, unknown)
             # schema 表达不了「两组键要对上」，所以单独查一遍。
             check_digest_coverage(record, sname, errs)
+            if sname == "profile.schema.json" and record.get("upstream_id") != record.get("account", {}).get("user_id"):
+                errs.append("profile upstream_id must equal account.user_id")
             if errs:
                 bad += 1
                 if bad <= 3:

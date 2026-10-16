@@ -107,6 +107,8 @@ def make_bundle(root, bundle_id, pages, *, status="complete", crawl_state=None, 
     for intent, route_key, verdict, observed_at, body in pages:
         n += 1
         url = f"https://movie.douban.com/people/example/collect?start={n - 1}"
+        if intent == "profile.overview":
+            url = "https://www.douban.com/people/example/"
         block = mkb.http_response(
             "HTTP/1.1 200 OK",
             [("Content-Type", "text/html; charset=utf-8"), ("Content-Length", str(len(body)))],
@@ -865,8 +867,27 @@ def c_censorship_is_not_privacy():
                 crawl_state=[cs("note.item", intent="note.item")])
 
 
+def c_profile_avatar_observations():
+    b = case("profile-avatar-observations",
+        "目标头像只能取身份块。相同 URL 保留新观测，未知缺失不清空；明确默认头像才写 null。",
+        {"profile": 1, "profile_revisions": 2, "profile_observations": 4,
+         "profile_avatars": ["https://img3.doubanio.com/icon/up82160871-1.jpg", None]})
+    def page(src):
+        img = f'<img src="{src}">' if src else ''
+        return ('<html><head><link rel="alternate" href="https://www.douban.com/feed/people/82160871/interests"></head>'
+                '<body><img src="https://img3.doubanio.com/icon/up999-1.jpg">'
+                '<div id="db-usr-profile"><div class="pic"><a href="https://www.douban.com/people/example/">'
+                + img + '</a></div><div class="info"><h1>Example</h1></div></div></body></html>').encode()
+    for i, src in enumerate(["https://img3.doubanio.com/icon/up82160871-1.jpg",
+                            "https://img3.doubanio.com/icon/up82160871-1.jpg", None,
+                            "https://img3.doubanio.com/icon/user_normal.jpg"], 1):
+        make_bundle(b, f"2026080{i}T101500Z-aaab0{i}",
+            [("profile.overview", "profile.overview", "ok", f"2026-08-0{i}T10:16:00+08:00", page(src))])
+
+
 def main():
     (HERE / "cases").mkdir(exist_ok=True)
+    c_profile_avatar_observations()
     c_login_is_not_content()
     c_incremental_grants_no_absence()
     c_gap_revokes_authority()

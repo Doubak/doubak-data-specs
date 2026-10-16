@@ -785,3 +785,12 @@ python3 validate.py --integrity-only <bundle 目录>
 消费者据此可以只把完整性当作硬门槛，而对合规性错误按 `canonical/INGESTION.md` §2.3 处理——**丢弃的是凭它能下的结论，不是数据**。
 
 `tests/invalid/` 下每个反例都配一份 `EXPECTED.txt` 说明它应该触发什么错误。**反例套件是让规范从一篇文档变成一件真东西的关键**：没有它，没人知道校验器到底拦不拦得住。
+
+### 目标账号头像资源
+
+开放 intent `asset.image.account_avatar` 对应路线 `asset.account_avatar`，surface 为
+`asset`，写入 `assets-*` 段；`parent_capture_id` 直接指向本次已核实目标身份的
+`profile.overview`。不将导航登录者或其他页面周边头像归属于目标账号。
+头像 URL 可能复用：新 bundle 重新取字节，不跨 bundle 按 URL 跳过；同一次主页观测
+恢复时去重已成功任务。请求不带 Cookie、不复用缓存。失败资源独立记缺口，不否定
+主页成功或其他有序路线的连续性。开放词表新增值不改变 bundle/1.4 格式。

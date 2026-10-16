@@ -55,7 +55,7 @@ class AccountNicknameTests(unittest.TestCase):
         return errors
 
     def test_all_user_record_schemas_are_checked(self):
-        self.assertEqual(len(SCHEMAS), 8, "manifest + 七类用户记录，不能漏一类")
+        self.assertEqual(len(SCHEMAS), 9, "manifest + 八类用户记录，不能漏一类")
         for path in SCHEMAS:
             with self.subTest(schema=path.name):
                 schema = json.loads(path.read_text(encoding="utf-8"))["properties"]["account"]
