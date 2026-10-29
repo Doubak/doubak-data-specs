@@ -197,6 +197,23 @@ CLAUDE.md 指出有三件事必须在第一天就对，因为它们事后无法�
 扩展在 portable checkpoint 的 `run_context` 中记录这些不含凭据的运行元数据；
 没有原身份的旧断点只能从已有捕获取证，不能使用当前 Cookie 或可被抢注的域名猜身份。
 
+#### 5.1.3 本人广播回复首屏快照（可选）
+
+`crawl_scope.broadcast_reply_snapshot` 是可选布尔值，只有 `self` +
+`authenticated` 可以为 true。生产者默认关闭，开始后冻结；旧档案缺失表示未声明，
+旧断点恢复不得自行开启。此开关不改变账号、域名、视角匹配规则。
+
+`broadcast.comments_snapshot` 只保存一次 `start=0&count=20` 的原始 API 响应，
+包括原样嵌入的楼中楼预览；不派生翻页、作者、头像或楼中楼请求。
+`broadcast.item` 的 HTML 与它是独立叶子任务，各自成功、失败和恢复。
+两者使用既有 WARC → index → checkpoint 协议，没有额外状态文件。
+叶子路线的 `enumeration` 为 `bounded`，`advanced=false`；任何首屏成功
+都不能推导讨论完整、回复删除或第三方作者资产。
+
+第三方回复不进入 Canonical，也不进入站点、搜索或平台导出。原始 bundle
+含第三方文字、标识及登录视角信息，不能视为已脱敏的公开发布产物。
+开放 intent 词表及可选 scope 扩展不要求版本升级；旧读者须保留原始响应。
+
 ### 5.2 `timezone_assumption`
 
 豆瓣页面上的时间**不带时区**（如 `title="2026-07-26 12:34:00"`）。几乎可以肯定是服务端的北京时间，但这是**推断**。

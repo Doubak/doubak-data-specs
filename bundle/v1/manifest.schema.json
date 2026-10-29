@@ -114,13 +114,63 @@
       "type": "object",
       "description": "抓取视角。旧档案缺失此字段时按原有本人视图处理。public 仅代表操作者可见的公开集合，永远不能授予缺失推断权限。",
       "properties": {
-        "visibility": { "enum": ["self", "public"] },
-        "operator_mode": { "enum": ["authenticated", "anonymous"] },
-        "operator_user_id": { "type": ["string", "null"], "pattern": "^[1-9][0-9]*$", "description": "公开登录视角的操作者数字 UID，用于增量范围匹配；不包含任何登录凭据。匿名为 null。" },
-        "skip_catalog": { "type": "boolean" }
+        "visibility": {
+          "enum": [
+            "self",
+            "public"
+          ]
+        },
+        "operator_mode": {
+          "enum": [
+            "authenticated",
+            "anonymous"
+          ]
+        },
+        "operator_user_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[1-9][0-9]*$",
+          "description": "公开登录视角的操作者数字 UID，用于增量范围匹配；不包含任何登录凭据。匿名为 null。"
+        },
+        "skip_catalog": {
+          "type": "boolean"
+        },
+        "broadcast_reply_snapshot": {
+          "type": "boolean",
+          "description": "本人账号显式选择保存广播回复首屏的原始响应；不代表讨论完整。缺失表示未声明。"
+        }
       },
-      "required": ["visibility", "operator_mode"],
-      "additionalProperties": true
+      "required": [
+        "visibility",
+        "operator_mode"
+      ],
+      "additionalProperties": true,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "broadcast_reply_snapshot": {
+                "const": true
+              }
+            },
+            "required": [
+              "broadcast_reply_snapshot"
+            ]
+          },
+          "then": {
+            "properties": {
+              "visibility": {
+                "const": "self"
+              },
+              "operator_mode": {
+                "const": "authenticated"
+              }
+            }
+          }
+        }
+      ]
     },
     "timezone_assumption": {
       "type": "string",

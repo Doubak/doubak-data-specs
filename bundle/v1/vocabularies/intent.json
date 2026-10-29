@@ -20,7 +20,7 @@
     "profile.overview": "个人主页总览",
     "profile.category_entry": "某个分类的入口页，声明数量的来源（其后可接 medium，如 profile.category_entry.movie）",
     "broadcast.timeline": "广播列表页",
-    "broadcast.item": "单条广播详情（主要用于补全被截断的正文）",
+    "broadcast.item": "单条广播详情 HTML；独立于回复 API，不保证正文比列表更完整。",
     "interest.list": "标记列表；其后接 medium 与 status，如 interest.list.movie.collect",
     "interest.item": "作品条目详情页。属【目录数据】，写入 catalog-* 段，可整批丢弃",
     "note.list": "日记列表",
@@ -43,7 +43,8 @@
     "asset.image.catalog_thumbnail": "列表页上的目录缩略图——写入 catalog-* 段",
     "probe.canary": "廉价探测请求，用于在恢复抓取前确认风控状态",
     "manual.user_requested": "用户手动要求补抓的页面",
-    "asset.image.account_avatar": "目标账号头像；父 capture 是已核实身份的 profile.overview，保存于 assets 段。同 URL 可能换图，不跨 bundle 跳过。"
+    "asset.image.account_avatar": "目标账号头像；父 capture 是已核实身份的 profile.overview，保存于 assets 段。同 URL 可能换图，不跨 bundle 跳过。",
+    "broadcast.comments_snapshot": "本人广播回复 API 的单次首屏原始快照（start=0,count=20）。不翻页、不递归、不声明讨论完整；第三方内容仅留在原始档案，不进入 Canonical。"
   },
   "components": {
     "medium": {
