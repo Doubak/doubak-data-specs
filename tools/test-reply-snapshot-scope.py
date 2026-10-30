@@ -16,6 +16,24 @@ VALIDATOR = jsonschema.Draft202012Validator(SCHEMA, registry=REGISTRY)
 BASE = json.loads((ROOT / 'examples/minimal-bundle/manifest.json').read_text())
 
 class ScopeTest(unittest.TestCase):
+    def test_crawl_scope_is_optional_but_known_values_are_checked(self):
+        schema = SCHEMA
+        self.assertNotIn("crawl_scope", schema["required"])
+        scope_schema = schema["properties"]["crawl_scope"]
+        for value, valid in [
+            ({"visibility": "self", "operator_mode": "authenticated"}, True),
+            ({"visibility": "public", "operator_mode": "anonymous", "skip_catalog": True}, True),
+            ({"visibility": "public", "operator_mode": "anonymous", "operator_user_id": None}, True),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": "123"}, True),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": "slug"}, False),
+            ({"visibility": "public", "operator_mode": "authenticated", "operator_user_id": 123}, False),
+            ({"visibility": "private", "operator_mode": "authenticated"}, False),
+            ({"visibility": "public", "operator_mode": "anonymous", "skip_catalog": "yes"}, False),
+            ({"visibility": "public"}, False),
+        ]:
+            with self.subTest(value=value):
+                self.assertEqual(jsonschema.Draft202012Validator(scope_schema).is_valid(value), valid)
+
     def test_legacy_and_declared_views(self):
         VALIDATOR.validate(BASE)
         for visibility, operator in [('self', 'authenticated'), ('public', 'authenticated'), ('public', 'anonymous')]:
