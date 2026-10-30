@@ -206,6 +206,9 @@ CLAUDE.md 指出有三件事必须在第一天就对，因为它们事后无法�
 `broadcast.comments_snapshot` 只保存一次 `start=0&count=20` 的原始 API 响应，
 包括原样嵌入的楼中楼预览；不派生翻页、作者、头像或楼中楼请求。
 `broadcast.item` 的 HTML 与它是独立叶子任务，各自成功、失败和恢复。
+两者覆盖已验证的本人 status 与 personal topic，不因 topic 使用 group/topic API
+而扩大到小组讨论。topic 首屏可固定 `nested=1`、`order_by=time_asc` 等实测参数；
+内嵌预览仍不构成递归抓取。个人 topic 正文可编辑，不能套用 status 正文不可变的假设。
 两者使用既有 WARC → index → checkpoint 协议，没有额外状态文件。
 叶子路线的 `enumeration` 为 `bounded`，`advanced=false`；任何首屏成功
 都不能推导讨论完整、回复删除或第三方作者资产。

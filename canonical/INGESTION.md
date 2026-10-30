@@ -50,6 +50,8 @@ JSON 内第三方作者、正文、附件与 `replies` 预览只保留在原始 
 `detail_html_only` 原始证据；以后若基于正常样本摄取正文，必须归一到已有广播的
 单一 `revisions`，不能建立平行的 `detail_revisions`。
 上述报告包括失败响应的 verdict，不能把“有捕获记录”说成“成功保存回复”。
+此原始证据边界同样适用于本人 personal topic 的详情与 nested 首屏，
+不得仅因接口路径包含 `group/topic` 就摄取成小组主帖或个人回复实体。
 
 ### 2.2 `login` 是最危险的一种，它长得像好数据
 
