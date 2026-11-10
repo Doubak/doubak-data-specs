@@ -515,6 +515,20 @@ def case_valid_unknown_verdict() -> None:
     )
 
 
+def case_valid_denied_verdict() -> None:
+    """权限拒绝是独立判定，不能记录成成功或删除。"""
+    d = fresh("valid", "denied-verdict", "应通过：bundle/1.5 允许资源级权限拒绝 denied。")
+    lines = index_lines(d)
+    lines[1]["verdict"] = "denied"
+    lines[1]["note"] = "已识别的权限拒绝页；正文未取得。"
+    save_index(d, lines)
+    m = load_manifest(d)
+    m["spec_version"] = "bundle/1.5"
+    save_manifest(d, m)
+    readme = d / "README.txt"
+    readme.write_text(readme.read_text(encoding="utf-8").replace("bundle/1.0", "bundle/1.5"), encoding="utf-8")
+
+
 def case_valid_from_the_future() -> None:
     """一份「来自未来」的档案：更高的小版本 + 今天还不认识的字段与取值。
 
@@ -576,6 +590,7 @@ def main() -> None:
     case_valid_from_the_future()
     case_valid_cross_bundle_parent()
     case_valid_unknown_verdict()
+    case_valid_denied_verdict()
     case_advanced_without_contiguity()
     case_advanced_with_gaps()
     case_gap_already_captured()

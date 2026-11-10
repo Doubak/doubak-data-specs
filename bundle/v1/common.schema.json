@@ -14,7 +14,7 @@
 
     "current_spec_version": {
       "type": "string",
-      "const": "bundle/1.4",
+      "const": "bundle/1.5",
       "description": "本目录当前这一版的版本号——【生产者应当写下的那个值】。\n\n与 spec_version 是两件事，不可混用：spec_version 说的是【读者必须接受什么】（任何 1.x），这里说的是【新档案该写什么】（当前这一版）。把两者合成一个 const，就会在下一次小版本递增时二选一：要么 schema 校验不过它自己描述的格式，要么全部既有档案变成非法。\n\n本定义不被任何 schema 引用，它的作用是让「当前版本是多少」这件事对代码生成器可读，而不必去解析 SPEC.md 的散文。"
     },
 
@@ -74,7 +74,7 @@
     },
 
     "verdict": {
-      "enum": ["ok", "blocked", "challenge", "login", "gone", "soft404", "unknown"],
+      "enum": ["ok", "blocked", "challenge", "login", "gone", "soft404", "unknown", "denied"],
       "description": "对响应可信度的判定，基于内容而非 HTTP 状态码（豆瓣以 HTTP 200 返回封锁页）。封闭词表：这是安全相关字段，取值拼写错误必须校验失败。读者遇到未知取值时必须当作不可信，不得当作 ok。\n\nunknown 于 bundle/1.2 加入。在此之前没有「判不出来」这个取值，生产者只能退而写 blocked——于是「豆瓣拒绝了」与「页面拿到了但我们不认识」被合并成同一件事，而两者的处置正好相反：前者该等一等再抓，后者重抓一百次也一样，该做的是改抽取器。实测代价：用户照界面上的「被限制」去重试，白费。\n\n【光有这个取值仍然不够】必须配 verdict_reason 说清是哪一种判不出来，否则只是把问题换了个说法。"
     },
 
