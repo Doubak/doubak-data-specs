@@ -78,7 +78,7 @@ python3 tests/make-tests.py
 
 ## 账号头像（canonical/1.3）
 
-[账号头像归档与个人站点图标设计](https://github.com/Doubak/doubak-extension/blob/main/docs/designs/account-avatar-and-site-branding.md)
+[账号头像归档与个人站点图标设计](https://github.com/Doubak/doubak-extension/blob/main/docs/designs/done/account-avatar-and-site-branding.md)
 新增开放 intent `asset.image.account_avatar`，使用已有 asset surface、assets 段与 parent capture 关系；
 单纯扩展开放 intent 不要求升级 bundle 版本。Canonical 新增带修订及观测来源的 `profile.ndjson`，
 schema、验证器、摄取规则、示例与 conformance 已同步。旧八文件 canonical 仍可验证，
