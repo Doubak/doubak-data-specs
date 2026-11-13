@@ -26,10 +26,9 @@ jobs:
       # 例子与反例都是脚本生成的。重新生成一遍应当与提交的内容逐字节一致：
       # 不一致说明生成器改了却没重新生成，提交的夹具已经过期。
       - name: 确认提交的例子与用例没有过期
-        working-directory: bundle/v1
         run: |
-          python3 examples/make-minimal-bundle.py
-          python3 tests/make-tests.py
+          (cd bundle/v1 && python3 examples/make-minimal-bundle.py && python3 tests/make-tests.py)
+          (cd canonical/tests && python3 make-tests.py)
 
       - name: 检查是否有未提交的差异
         run: |

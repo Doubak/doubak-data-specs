@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把 canonical 的 NDJSON 对着这一版的 schema 校验一遍。
 
-    python3 validate.py <canonical 目录>        # 校验四个 ndjson
+    python3 validate.py <canonical 目录>        # 校验 canonical ndjson
     python3 validate.py --self                  # 只自检：schema 本身能不能读
 
 【为什么自己写一个而不是要求装 jsonschema】与 bundle/v1/validate.py 同一个理由：

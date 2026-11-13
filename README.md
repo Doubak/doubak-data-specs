@@ -21,8 +21,8 @@
 - **[INGESTION.md](canonical/INGESTION.md)** —— 面对多个 bundle 归档，哪些可以读取、读取后**可以得出哪些确定结论**
 - **[IDENTITY.md](canonical/IDENTITY.md)** —— 如何识别与判定跨抓取批次的同一条记录
 - **[FIELDS.md](canonical/FIELDS.md)** —— 定义可提取字段，以及哪些复合字段**不应**在解析阶段过早拆解
-- JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `doulist` / `album` / `group_topic` / `group_join` / `common`
-- [一致性用例](canonical/tests/)：17 组，重点约束**「解析器绝不得推导出的错误结论」**
+- JSON Schema：`mark` / `subject` / `broadcast` / `longform` / `doulist` / `album` / `group_topic` / `group_join` / `profile` / `common`
+- [一致性用例](canonical/tests/)：22 组，重点约束**「解析器绝不得推导出的错误结论」**
 
 ### 校验
 
@@ -83,3 +83,8 @@ python3 tests/make-tests.py
 单纯扩展开放 intent 不要求升级 bundle 版本。Canonical 新增带修订及观测来源的 `profile.ndjson`，
 schema、验证器、摄取规则、示例与 conformance 已同步。旧八文件 canonical 仍可验证，
 缺少 profile 文件表示没有结构化资料，不表示用户删除了头像。
+
+## 同系列目录观测（canonical/1.4）
+
+[同系列作品与站内导航设计](https://github.com/Doubak/doubak-extension/blob/main/docs/designs/done/subject-series-and-site-navigation.md)
+为电影 subject 新增可选的 `fields.series`（`douban_same_series`）：按来源顺序保存页面提供的同系列条目、范围声明（`complete` / `partial` / `unknown`）及来源 URL，不创建额外标记，也不作跨作品传递推断。未知缺失在 `observation.omitted_fields` 声明并保留旧值，详情与列表补丁按真实观测时间确定性重放；对应 schema、参考校验器检查、示例与 `subject-series-history` 一致性用例已同步。
