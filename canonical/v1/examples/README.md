@@ -94,3 +94,6 @@ digests   aliases ·             cover_url_key · info · raw_meta · title
 
 `profile-avatar-observations.json`：同 URL 的多次观测、未展示头像节点、明确默认头像，
 展示 omitted-field 继承与 null 清空的区别；来源为合成 conformance bundle。
+
+- `subject-series-history.json`：canonical/1.4，先有列表、后有系列、缺栏目保持旧值，
+  随后新快照及明确空配置；每条观测仅指向自己的捕获，省略字段独立声明。

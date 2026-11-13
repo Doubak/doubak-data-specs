@@ -53,6 +53,9 @@ jobs:
       - name: 抓取范围与回复首屏 opt-in 约束
         run: python3 tools/test-reply-snapshot-scope.py
 
+      - name: 系列快照契约
+        run: python3 -m unittest discover -s canonical/tests -p 'test_*.py'
+
       - name: 账号资料与旧八文件兼容性
         run: python3 tools/test_profile.py
 

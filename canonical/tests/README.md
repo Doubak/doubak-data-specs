@@ -62,3 +62,10 @@ cases/<用例名>/
 用例是**实现无关**的：输入是 bundle，断言是 JSON。任何语言写的解析器都能跑。
 
 第一个实现是 `doubak-data-parser/test/conformance.test.js`。
+
+`subject-series-history` 验证详情独立形成目录修订、缺失保持旧值、明确空配置覆盖，
+且不创建新标记。`subject_series_ids` 按修订顺序逐项比较，不能按集合比较。
+
+```sh
+python3 -m unittest discover -s canonical/tests -p 'test_*.py'  # 从仓库根运行
+```

@@ -104,11 +104,13 @@ def make_bundle(root, bundle_id, pages, *, status="complete", crawl_state=None, 
     )
 
     index, n = [], 0
-    for intent, route_key, verdict, observed_at, body in pages:
+    for intent, route_key, verdict, observed_at, body, *explicit_url in pages:
         n += 1
         url = f"https://movie.douban.com/people/example/collect?start={n - 1}"
         if intent == "profile.overview":
             url = "https://www.douban.com/people/example/"
+        if explicit_url:
+            url = explicit_url[0]
         block = mkb.http_response(
             "HTTP/1.1 200 OK",
             [("Content-Type", "text/html; charset=utf-8"), ("Content-Length", str(len(body)))],
@@ -885,8 +887,25 @@ def c_profile_avatar_observations():
             [("profile.overview", "profile.overview", "ok", f"2026-08-0{i}T10:16:00+08:00", page(src))])
 
 
+def c_subject_series_history():
+    b = case("subject-series-history", "详情独立推进目录修订；缺失不清空；不得倒灌旧列表或新建标记。",
+        {"marks": 1, "mark_revisions": 1, "subjects": 1, "subject_revisions": 4,
+         "subject_series_ids": [None, ["502"], ["503"], []]})
+    def detail(ids, total, series_url="https://movie.douban.com/series/ABC"):
+        config = {"SUBJECT_ID":"501", "SERIES_SEASON_NAMES":{},
+            "SERIES_OTHER_SUBJECTS":[{"id":i,"url":f"https://movie.douban.com/subject/{i}/","title":i} for i in ids],
+            "SERIES":{"series_url":series_url,"series_total":str(total)}}
+        return ("<script>var _CONFIG = " + json.dumps(config) + ";</script>").encode()
+    pages = [(*ROUTE, "ok", "2026-07-28T10:00:00Z", list_page([{"id":"501","cid":"9401","date":"2026-07-01","rating":4}]))]
+    for i, body in enumerate([detail(["502"],2), b"<div>unknown template</div>", detail(["503"],2), detail([],0,"")],1):
+        pages.append(("interest.item", "interest.item", "ok", f"2026-07-28T10:0{i}:00Z", body,
+            "https://movie.douban.com/subject/501/"))
+    make_bundle(b,"20260728T101500Z-aaac01",pages)
+
+
 def main():
     (HERE / "cases").mkdir(exist_ok=True)
+    c_subject_series_history()
     c_profile_avatar_observations()
     c_login_is_not_content()
     c_incremental_grants_no_absence()

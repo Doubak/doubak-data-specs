@@ -87,6 +87,8 @@ def check_subject_series(record: dict, errs: list) -> None:
         if not isinstance(rev, dict):
             continue
         fields = rev.get("fields") or {}
+        if not isinstance(fields, dict):
+            continue
         series = fields.get("series")
         if isinstance(series, dict) and series.get("kind") == "douban_same_series":
             if record.get("medium") != "movie":
@@ -94,6 +96,8 @@ def check_subject_series(record: dict, errs: list) -> None:
             seen = set()
             for item in series.get("items", []) if isinstance(series.get("items"), list) else []:
                 if not isinstance(item, dict):
+                    continue
+                if not isinstance(item.get("medium"), str) or not isinstance(item.get("id"), str):
                     continue
                 key = (item.get("medium"), item.get("id"))
                 if key in seen:
@@ -107,6 +111,8 @@ def check_subject_series(record: dict, errs: list) -> None:
             if not isinstance(obs, dict):
                 continue
             omitted = obs.get("omitted_fields") or []
+            if not isinstance(omitted, list):
+                continue
             if "tags" in omitted or "rating" in omitted:
                 errs.append("subject omitted_fields contains mark-only field")
             if "series" not in omitted:

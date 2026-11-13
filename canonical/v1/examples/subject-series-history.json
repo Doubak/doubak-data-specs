@@ -1,0 +1,222 @@
+{
+  "canonical_version": "canonical/1.4",
+  "medium": "movie",
+  "id": "501",
+  "url": "https://movie.douban.com/subject/501/",
+  "upstream_deleted": false,
+  "revisions": [
+    {
+      "parser_version": "doubak-data-parser/0.18.0",
+      "first_observed_at": "2026-07-28T10:00:00Z",
+      "last_observed_at": "2026-07-28T10:00:00Z",
+      "fields": {
+        "aliases": null,
+        "info": null,
+        "title": "片名",
+        "cover_url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "cover_url_key": "https://img.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "raw_meta": "2020 / 导演 / 剧情"
+      },
+      "digests": {
+        "aliases": null,
+        "info": null,
+        "title": "sha256:01af64fe79479dafa6618e112f1eee8dc435d14fff66a15f56b62281f939e288",
+        "cover_url_key": "sha256:e1db181cec5c34f86a05e2039f3ad2daa1fdeb8e00359ef86914e6a2cf054187",
+        "raw_meta": "sha256:474ce7b3273b666af91aa6965814567250a455fc30da0568e576226b3f5c5e2f"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260728T101500Z-aaac01",
+          "capture_ids": [
+            "20260728T101500Z-aaac01#000001"
+          ],
+          "observed_at": "2026-07-28T10:00:00Z",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "aliases",
+            "info",
+            "series"
+          ]
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.18.0",
+      "first_observed_at": "2026-07-28T10:01:00Z",
+      "last_observed_at": "2026-07-28T10:02:00Z",
+      "fields": {
+        "aliases": null,
+        "info": null,
+        "title": "片名",
+        "cover_url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "cover_url_key": "https://img.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "raw_meta": "2020 / 导演 / 剧情",
+        "series": {
+          "kind": "douban_same_series",
+          "source": "embedded_config",
+          "series_url": "https://movie.douban.com/series/ABC",
+          "items": [
+            {
+              "medium": "movie",
+              "id": "502",
+              "title": "502"
+            }
+          ],
+          "scope": "unknown",
+          "claimed_total": 2,
+          "more_url": null
+        }
+      },
+      "digests": {
+        "aliases": null,
+        "info": null,
+        "title": "sha256:01af64fe79479dafa6618e112f1eee8dc435d14fff66a15f56b62281f939e288",
+        "cover_url_key": "sha256:e1db181cec5c34f86a05e2039f3ad2daa1fdeb8e00359ef86914e6a2cf054187",
+        "raw_meta": "sha256:474ce7b3273b666af91aa6965814567250a455fc30da0568e576226b3f5c5e2f",
+        "series": "sha256:d97f3a4966731392b0f91e91a2c74cb6c7b0adfc1e549048360ec3ad845d64fc"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260728T101500Z-aaac01",
+          "capture_ids": [
+            "20260728T101500Z-aaac01#000002"
+          ],
+          "observed_at": "2026-07-28T10:01:00Z",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "title",
+            "aliases",
+            "info",
+            "cover_url",
+            "cover_url_key",
+            "raw_meta"
+          ]
+        },
+        {
+          "bundle_id": "20260728T101500Z-aaac01",
+          "capture_ids": [
+            "20260728T101500Z-aaac01#000003"
+          ],
+          "observed_at": "2026-07-28T10:02:00Z",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "title",
+            "aliases",
+            "info",
+            "cover_url",
+            "cover_url_key",
+            "raw_meta",
+            "series"
+          ]
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.18.0",
+      "first_observed_at": "2026-07-28T10:03:00Z",
+      "last_observed_at": "2026-07-28T10:03:00Z",
+      "fields": {
+        "aliases": null,
+        "info": null,
+        "title": "片名",
+        "cover_url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "cover_url_key": "https://img.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "raw_meta": "2020 / 导演 / 剧情",
+        "series": {
+          "kind": "douban_same_series",
+          "source": "embedded_config",
+          "series_url": "https://movie.douban.com/series/ABC",
+          "items": [
+            {
+              "medium": "movie",
+              "id": "503",
+              "title": "503"
+            }
+          ],
+          "scope": "unknown",
+          "claimed_total": 2,
+          "more_url": null
+        }
+      },
+      "digests": {
+        "aliases": null,
+        "info": null,
+        "title": "sha256:01af64fe79479dafa6618e112f1eee8dc435d14fff66a15f56b62281f939e288",
+        "cover_url_key": "sha256:e1db181cec5c34f86a05e2039f3ad2daa1fdeb8e00359ef86914e6a2cf054187",
+        "raw_meta": "sha256:474ce7b3273b666af91aa6965814567250a455fc30da0568e576226b3f5c5e2f",
+        "series": "sha256:2d87c0901a02a1dc2c5d91c407fea7c0dcefe1853897bd97345d577ba1fc0173"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260728T101500Z-aaac01",
+          "capture_ids": [
+            "20260728T101500Z-aaac01#000004"
+          ],
+          "observed_at": "2026-07-28T10:03:00Z",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "title",
+            "aliases",
+            "info",
+            "cover_url",
+            "cover_url_key",
+            "raw_meta"
+          ]
+        }
+      ]
+    },
+    {
+      "parser_version": "doubak-data-parser/0.18.0",
+      "first_observed_at": "2026-07-28T10:04:00Z",
+      "last_observed_at": "2026-07-28T10:04:00Z",
+      "fields": {
+        "aliases": null,
+        "info": null,
+        "title": "片名",
+        "cover_url": "https://img1.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "cover_url_key": "https://img.doubanio.com/view/photo/s_ratio_poster/public/p501.jpg",
+        "raw_meta": "2020 / 导演 / 剧情",
+        "series": {
+          "kind": "douban_same_series",
+          "source": "embedded_config",
+          "series_url": null,
+          "items": [],
+          "scope": "complete",
+          "claimed_total": 0,
+          "more_url": null
+        }
+      },
+      "digests": {
+        "aliases": null,
+        "info": null,
+        "title": "sha256:01af64fe79479dafa6618e112f1eee8dc435d14fff66a15f56b62281f939e288",
+        "cover_url_key": "sha256:e1db181cec5c34f86a05e2039f3ad2daa1fdeb8e00359ef86914e6a2cf054187",
+        "raw_meta": "sha256:474ce7b3273b666af91aa6965814567250a455fc30da0568e576226b3f5c5e2f",
+        "series": "sha256:bd05a3c5144945e1a37ccb37ef66ecdcc17c073a2e249e204509ce3f1632cce6"
+      },
+      "observations": [
+        {
+          "bundle_id": "20260728T101500Z-aaac01",
+          "capture_ids": [
+            "20260728T101500Z-aaac01#000005"
+          ],
+          "observed_at": "2026-07-28T10:04:00Z",
+          "absence_authority": "none",
+          "surface": "html",
+          "omitted_fields": [
+            "title",
+            "aliases",
+            "info",
+            "cover_url",
+            "cover_url_key",
+            "raw_meta"
+          ]
+        }
+      ]
+    }
+  ]
+}

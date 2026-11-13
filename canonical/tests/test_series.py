@@ -37,6 +37,8 @@ class SeriesContract(unittest.TestCase):
         for value in [None, [], {'kind':'douban_same_series'}, {**self.record()['revisions'][0]['fields']['series'], 'claimed_total': -1}]:
             r=self.record(); r['revisions'][0]['fields']['series']=value
             self.assertTrue(self.errors(r))
+        r=self.record(); r['revisions'][0]['fields']['series']['items'][0]['id']={}
+        self.assertTrue(self.errors(r))
         r=self.record(); items=r['revisions'][0]['fields']['series']['items']; items.append(copy.deepcopy(items[0]))
         self.assertTrue(self.errors(r))
         r=self.record(); r['revisions'][0]['observations'][0]['omitted_fields']=['tags']
