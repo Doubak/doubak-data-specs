@@ -80,6 +80,50 @@ def check_digest_coverage(record: dict, sname: str, errs: list) -> None:
             errs.append(f"$.revisions[{i}].digests: 多了 {k} 的摘要（{why}）")
 
 
+def check_subject_series(record: dict, errs: list) -> None:
+    """1.4 的来源省略与系列身份约束；未知词表不擅自解释。"""
+    previous_time = None
+    for rev in record.get("revisions") or []:
+        if not isinstance(rev, dict):
+            continue
+        fields = rev.get("fields") or {}
+        series = fields.get("series")
+        if isinstance(series, dict) and series.get("kind") == "douban_same_series":
+            if record.get("medium") != "movie":
+                errs.append("series: douban_same_series source must be movie")
+            seen = set()
+            for item in series.get("items", []) if isinstance(series.get("items"), list) else []:
+                if not isinstance(item, dict):
+                    continue
+                key = (item.get("medium"), item.get("id"))
+                if key in seen:
+                    errs.append("series: duplicate member")
+                seen.add(key)
+                if item.get("medium") != "movie":
+                    errs.append("series: member must be movie")
+        if minor_of(record) < 4:
+            continue
+        for obs in rev.get("observations") or []:
+            if not isinstance(obs, dict):
+                continue
+            omitted = obs.get("omitted_fields") or []
+            if "tags" in omitted or "rating" in omitted:
+                errs.append("subject omitted_fields contains mark-only field")
+            if "series" not in omitted:
+                if "series" not in fields:
+                    errs.append("subject: unobserved series must be omitted")
+                elif obs.get("absence_authority") != "none":
+                    errs.append("series evidence must have absence_authority none")
+            try:
+                from datetime import datetime
+                at = datetime.fromisoformat(obs["observed_at"].replace("Z", "+00:00"))
+                if previous_time is not None and at < previous_time:
+                    errs.append("subject observations must be chronological")
+                previous_time = at
+            except (KeyError, ValueError, TypeError):
+                pass
+
+
 def load(name: str) -> dict:
     if name not in _cache:
         _cache[name] = json.loads((HERE / name).read_text(encoding="utf-8"))
@@ -214,6 +258,8 @@ def main() -> int:
             check(record, schema, sname, "$", errs, unknown)
             # schema 表达不了「两组键要对上」，所以单独查一遍。
             check_digest_coverage(record, sname, errs)
+            if sname == "subject.schema.json":
+                check_subject_series(record, errs)
             if sname == "profile.schema.json" and record.get("upstream_id") != record.get("account", {}).get("user_id"):
                 errs.append("profile upstream_id must equal account.user_id")
             if errs:

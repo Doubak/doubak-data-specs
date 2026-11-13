@@ -179,3 +179,34 @@
 未展示的字段省略，并在该次 observation 的 `omitted_fields` 中标明；已有值可以继承，
 继承不构成本次对该字段的新证据。只有身份已确认且明确显示默认头像时，`avatar_url`
 才为 null。头像字节保留于 bundle，canonical 只记录页面给出的 URL，不推测更大尺寸。
+
+## 同系列目录观测（canonical/1.4）
+
+subject 的可选 `fields.series` 是豆瓣电影详情页在某次捕获中的列表，
+不是全局系列实体，也不是 Enricher 的 `series_of` / `part_of`。不创建标记，不作传递推断。
+对象必填 `kind`（当前 douban_same_series）、`source`（当前 embedded_config；
+rendered_section 保留给有实证的静态模板）、`items`、`scope`。
+词表和对象附加属性开放；未知 kind 不展示，未知 source/scope 不授予完整性。
+items 按来源顺序存 movie/id、title（可 null）、可选 season_label（可 null），不重复。
+series_url 保存已验证的 movie.douban.com/series/<token>，more_url 为来源线索（不得直接执行）。
+claimed_total 为非负整数或 null，不手动减去当前作品。
+已见 embedded_config 的数组不含自项，总数包含自项；非空数组范围默认 unknown，
+明确未完整列举或局部解析失败为 partial。数组为空且 URL 空/总数 0，或 URL 存在/总数 1，
+才有已取证的 complete 空状态。完整仅指该来源，不是所有现实作品。
+
+初次未读 series 省略键和摘要，并在该次 observation.omitted_fields 声明；
+后续缺失保留旧值，仍声明省略。null 不是清空，也不由 producer 输出。
+info/aliases 继续使用初次未知 null 的旧约定，不能跟随此字段改义。
+series 使用普通 fieldDigest；顺序变化产生修订，cover_url 仍是唯一摘要豁免。
+
+先收集有标记列表证据的作品资格，再按观测时间、bundle_id、capture_id、补丁种类
+的确定性顺序重放列表/详情稀疏补丁。详情只更新此次实际提取的字段，不能把最新详情
+倒灌历史列表。subject 构造自己的 omitted_fields，不复制 mark 的 tags/rating。
+详情 observation 指向自己的 capture，authority 为 none；不变列表仍追加观测。
+同秒冲突保留并诊断，不声称知道真实先后。
+
+展示当前列表的实证时间必须跨所有 revisions 查找同值、未省略 series 的 observation，
+不能使用 subject.last_observed_at 或仅查最后 revision。列表变化与个人标记历史分开，
+parser_version 不同不解释为平台编辑。显式坏字段不回退旧列表。
+旧 canonical/1.0–1.3 不要求此字段；新字段可被旧 reader 忽略。必须从 WARC 重解析才能
+恢复可靠详情时序，禁止在旧 canonical 上补当前数据冒充历史。
