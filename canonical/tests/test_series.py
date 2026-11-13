@@ -24,6 +24,8 @@ class SeriesContract(unittest.TestCase):
     def test_valid_and_extensible(self):
         r = self.record()
         self.assertEqual(self.errors(r), [])
+        r['revisions'][0]['fields']['series']['scope'] = 'complete'
+        self.assertEqual(self.errors(r), [])
         r['revisions'][0]['fields']['series'].update(source='future', scope='future', extra=True)
         self.assertEqual(self.errors(r), [])
     def test_missing_old_and_new(self):

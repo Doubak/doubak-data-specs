@@ -258,9 +258,9 @@ rendered_section 保留给有实证的静态模板）、`items`、`scope`。
 items 按来源顺序存 movie/id、title（可 null）、可选 season_label（可 null），不重复。
 series_url 保存已验证的 movie.douban.com/series/<token>，more_url 为来源线索（不得直接执行）。
 claimed_total 为非负整数或 null，不手动减去当前作品。
-已见 embedded_config 的数组不含自项，总数包含自项；非空数组范围默认 unknown，
-明确未完整列举或局部解析失败为 partial。数组为空且 URL 空/总数 0，或 URL 存在/总数 1，
-才有已取证的 complete 空状态。完整仅指该来源，不是所有现实作品。
+已见 embedded_config 的数组不含自项，总数包含自项；数组为空且 URL 空/总数 0，
+或 URL 存在/总数 1，或非空且无诊断、URL 有效、不含自项且 `items.length + 1 === claimed_total`
+时范围为 `complete`，其余数量不一致或局部解析失败为 `partial`。完整仅指该来源，不是所有现实作品。
 
 初次未读 series 省略键和摘要，并在该次 observation.omitted_fields 声明；
 后续缺失保留旧值，仍声明省略。null 不是清空，也不由 producer 输出。
